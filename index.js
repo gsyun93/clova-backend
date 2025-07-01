@@ -53,7 +53,7 @@ app.post('/clova-ocr', async (req, res) => {
     console.log('CLOVA OCR API 요청 시작...');
 
     const response = await axios.post(
-      'https://f6oq8rjph7.apigw.ntruss.com/custom/v1/436',
+      'https://f6oog8rjph7.apigw.ntruss.com/custom/v1/43607',
       {
         images: [{ 
           format: 'jpg', 
