@@ -34,17 +34,17 @@ app.post('/clova-ocr', async (req, res) => {
     }
 
     // 환경변수 확인
-    if (!process.env.NAVER_CLOVA_CLIENT_ID || !process.env.NAVER_CLOVA_CLIENT_SECRET) {
-      console.error('CLOVA API 키가 설정되지 않았습니다.');
+    if (!process.env.CLOVA_OCR_SECRET) {
+      console.error('CLOVA OCR Secret이 설정되지 않았습니다.');
       return res.status(500).json({ 
-        error: '서버 설정 오류: CLOVA API 키가 필요합니다.' 
+        error: '서버 설정 오류: CLOVA OCR Secret이 필요합니다.' 
       });
     }
 
     console.log('CLOVA OCR API 요청 시작...');
 
     const response = await axios.post(
-      'https://naveropenapi.apigw.ntruss.com/vision-ocr/v1/ocr',
+      'https://f6oq8rjph7.apigw.ntruss.com/custom/v1/436',
       {
         images: [{ 
           format: 'jpg', 
@@ -58,8 +58,7 @@ app.post('/clova-ocr', async (req, res) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-NCP-APIGW-API-KEY-ID': process.env.NAVER_CLOVA_CLIENT_ID,
-          'X-NCP-APIGW-API-KEY': process.env.NAVER_CLOVA_CLIENT_SECRET
+          'X-OCR-SECRET': process.env.CLOVA_OCR_SECRET
         },
         timeout: 30000 // 30초 타임아웃
       }
