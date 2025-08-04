@@ -2,53 +2,10 @@ import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import mysql from 'mysql2/promise';
 
 dotenv.config();
 
 const app = express();
-
-// MySQL 연결 설정
-let db;
-async function connectDB() {
-  try {
-    db = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'fortune_statistics',
-      port: process.env.DB_PORT || 3306
-    });
-    console.log('✅ MySQL 데이터베이스 연결 성공');
-    
-    // statistics 테이블 생성
-    await createStatisticsTable();
-  } catch (error) {
-    console.error('❌ MySQL 연결 실패:', error.message);
-  }
-}
-
-// statistics 테이블 생성
-async function createStatisticsTable() {
-  try {
-    const createTableSQL = `
-      CREATE TABLE IF NOT EXISTS statistics (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        gender VARCHAR(10) NOT NULL,
-        age_group VARCHAR(20) NOT NULL,
-        mbti VARCHAR(4),
-        service_type VARCHAR(20) NOT NULL,
-        weekday VARCHAR(10) NOT NULL,
-        time_period VARCHAR(10) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-    await db.execute(createTableSQL);
-    console.log('✅ statistics 테이블 생성 완료');
-  } catch (error) {
-    console.error('❌ 테이블 생성 실패:', error.message);
-  }
-}
 
 // 미들웨어 설정
 app.use(cors());
@@ -63,147 +20,6 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
-// 통계 데이터 저장 API
-app.post('/api/statistics', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: '데이터베이스 연결이 없습니다.' });
-    }
-
-    const { gender, age_group, mbti, service_type, weekday, time_period } = req.body;
-
-    // 필수 필드 검증
-    if (!gender || !age_group || !service_type || !weekday || !time_period) {
-      return res.status(400).json({ 
-        error: '필수 필드가 누락되었습니다.' 
-      });
-    }
-
-    const insertSQL = `
-      INSERT INTO statistics (gender, age_group, mbti, service_type, weekday, time_period)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
-    
-    await db.execute(insertSQL, [gender, age_group, mbti, service_type, weekday, time_period]);
-    
-    res.json({ success: true, message: '통계 데이터가 저장되었습니다.' });
-  } catch (error) {
-    console.error('통계 저장 오류:', error);
-    res.status(500).json({ error: '통계 저장 중 오류가 발생했습니다.' });
-  }
-});
-
-// 통계 데이터 조회 API
-app.get('/api/statistics', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: '데이터베이스 연결이 없습니다.' });
-    }
-
-    const [rows] = await db.execute('SELECT * FROM statistics ORDER BY created_at DESC');
-    
-    // 통계 계산
-    const stats = calculateStatistics(rows);
-    
-    res.json({
-      total_users: rows.length,
-      ...stats
-    });
-  } catch (error) {
-    console.error('통계 조회 오류:', error);
-    res.status(500).json({ error: '통계 조회 중 오류가 발생했습니다.' });
-  }
-});
-
-// 통계 데이터 초기화 API
-app.delete('/api/statistics', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: '데이터베이스 연결이 없습니다.' });
-    }
-
-    await db.execute('DELETE FROM statistics');
-    
-    res.json({ success: true, message: '모든 통계 데이터가 삭제되었습니다.' });
-  } catch (error) {
-    console.error('통계 초기화 오류:', error);
-    res.status(500).json({ error: '통계 초기화 중 오류가 발생했습니다.' });
-  }
-});
-
-// CSV 내보내기 API
-app.get('/api/statistics/export', async (req, res) => {
-  try {
-    if (!db) {
-      return res.status(500).json({ error: '데이터베이스 연결이 없습니다.' });
-    }
-
-    const [rows] = await db.execute('SELECT * FROM statistics ORDER BY created_at DESC');
-    
-    // CSV 헤더
-    const csvHeader = 'ID,성별,연령대,MBTI,서비스유형,요일,시간대,생성일시\n';
-    
-    // CSV 데이터
-    const csvData = rows.map(row => 
-      `${row.id},${row.gender},${row.age_group},${row.mbti || ''},${row.service_type},${row.weekday},${row.time_period},${row.created_at}`
-    ).join('\n');
-    
-    const csv = csvHeader + csvData;
-    
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="statistics_${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send(csv);
-  } catch (error) {
-    console.error('CSV 내보내기 오류:', error);
-    res.status(500).json({ error: 'CSV 내보내기 중 오류가 발생했습니다.' });
-  }
-});
-
-// 통계 계산 함수
-function calculateStatistics(rows) {
-  const stats = {
-    gender_stats: { male: 0, female: 0 },
-    age_stats: { '20대': 0, '30대': 0, '40대': 0, '50대+': 0 },
-    mbti_stats: {},
-    service_stats: { '운세': 0, '조력자': 0, '방해꾼': 0 },
-    time_stats: { '오전': 0, '오후': 0, '저녁': 0 },
-    weekday_stats: { '월요일': 0, '화요일': 0, '수요일': 0, '목요일': 0, '금요일': 0, '토요일': 0, '일요일': 0 }
-  };
-
-  rows.forEach(row => {
-    // 성별 통계
-    if (row.gender === '남성') stats.gender_stats.male++;
-    else if (row.gender === '여성') stats.gender_stats.female++;
-
-    // 연령대 통계
-    if (stats.age_stats[row.age_group] !== undefined) {
-      stats.age_stats[row.age_group]++;
-    }
-
-    // MBTI 통계
-    if (row.mbti) {
-      stats.mbti_stats[row.mbti] = (stats.mbti_stats[row.mbti] || 0) + 1;
-    }
-
-    // 서비스 통계
-    if (stats.service_stats[row.service_type] !== undefined) {
-      stats.service_stats[row.service_type]++;
-    }
-
-    // 시간대 통계
-    if (stats.time_stats[row.time_period] !== undefined) {
-      stats.time_stats[row.time_period]++;
-    }
-
-    // 요일 통계
-    if (stats.weekday_stats[row.weekday] !== undefined) {
-      stats.weekday_stats[row.weekday]++;
-    }
-  });
-
-  return stats;
-}
 
 // CLOVA OCR 엔드포인트
 app.post('/clova-ocr', async (req, res) => {
@@ -291,12 +107,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// 서버 시작 시 데이터베이스 연결
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 CLOVA OCR 서버가 포트 ${PORT}에서 실행 중입니다.`);
-    console.log(`📝 OCR 엔드포인트: http://localhost:${PORT}/clova-ocr`);
-    console.log(`📊 통계 API: http://localhost:${PORT}/api/statistics`);
-    console.log(`🔍 헬스체크: http://localhost:${PORT}/`);
-  });
+app.listen(PORT, () => {
+  console.log(`🚀 CLOVA OCR 서버가 포트 ${PORT}에서 실행 중입니다.`);
+  console.log(`📝 OCR 엔드포인트: http://localhost:${PORT}/clova-ocr`);
+  console.log(`🔍 헬스체크: http://localhost:${PORT}/`);
 }); 
