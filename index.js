@@ -631,7 +631,33 @@ app.post('/clova-ocr', async (req, res) => {
     );
 
     console.log('CLOVA OCR API 응답 성공');
-    res.json(response.data);
+    
+    // CLOVA OCR 응답에서 텍스트 추출
+    let ocrText = '';
+    if (response.data && response.data.images && response.data.images.length > 0) {
+        const image = response.data.images[0];
+        if (image.fields) {
+            // fields 배열에서 텍스트 추출
+            ocrText = image.fields.map(field => field.inferText).join(' ');
+        } else if (image.text) {
+            // text 필드가 있는 경우
+            ocrText = image.text;
+        }
+    }
+    
+    // 텍스트가 없으면 에러 반환
+    if (!ocrText) {
+        console.warn('CLOVA OCR에서 텍스트를 추출할 수 없습니다.');
+        return res.status(400).json({
+            error: 'OCR 결과에서 텍스트를 추출할 수 없습니다.',
+            details: '이미지가 명확하지 않거나 OCR 인식에 실패했습니다.'
+        });
+    }
+    
+    console.log('추출된 OCR 텍스트:', ocrText);
+    
+    // 텍스트만 반환 (프론트엔드가 기대하는 형식)
+    res.json({ text: ocrText });
 
   } catch (err) {
     console.error('CLOVA OCR API 오류:', err?.response?.data || err.message);
