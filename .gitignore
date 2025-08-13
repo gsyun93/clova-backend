@@ -1,0 +1,48 @@
+# 환경변수 파일
+.env
+.env.local
+.env.development
+.env.production
+
+# 의존성 폴더
+node_modules/
+
+# 로그 파일
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 런타임 데이터
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 커버리지 디렉토리
+coverage/
+.nyc_output
+
+# 임시 폴더
+.tmp/
+.temp/
+
+# OS 생성 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE 파일
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 배포 파일
+dist/
+build/ 
