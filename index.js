@@ -496,34 +496,6 @@ function parseHindranceResult(text) {
   }
 }
 
-// 운세 결과 파싱 함수
-function parseFortuneResult(text) {
-  const lines = text.split('\n').map(l => l.trim());
-  
-  // 확률 기반으로 점수 생성
-  const scores = {
-    money: generateRandomScore(),
-    love: generateRandomScore(),
-    career: generateRandomScore(),
-    health: generateRandomScore()
-  };
-
-  // 종합 지수 계산 (단순 평균)
-  const totalScore = Math.round(
-    (scores.money + scores.love + scores.career + scores.health) / 4
-  );
-
-  return {
-    money: scores.money,
-    love: scores.love,
-    career: scores.career,
-    health: scores.health,
-    total: totalScore,
-    fortune: extractTextBlock(lines, '운세 요약:') || '오늘은 좋은 일이 가득할 것입니다.',
-    mbtiTip: extractTextBlock(lines, 'MBTI 처방전:') || 'MBTI 특성을 살려 오늘 하루를 보내세요.'
-  };
-}
-
 // 확률 기반 점수 생성 함수
 function generateRandomScore() {
   const random = Math.random() * 100;
