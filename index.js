@@ -113,7 +113,7 @@ app.post('/generate-helper', async (req, res) => {
       body: JSON.stringify({
         model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
+        temperature: 1
       })
     });
 
@@ -170,7 +170,7 @@ app.post('/generate-hindrance', async (req, res) => {
       body: JSON.stringify({
         model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
+        temperature: 1
       })
     });
 
@@ -227,7 +227,7 @@ app.post('/generate-fortune', async (req, res) => {
       body: JSON.stringify({
         model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
+        temperature: 1
       })
     });
 
