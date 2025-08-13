@@ -111,9 +111,9 @@ app.post('/generate-helper', async (req, res) => {
         "Authorization": "Bearer " + gptApiKey
       },
       body: JSON.stringify({
-        model: "gpt-5-nano",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 1
+        temperature: 0.9
       })
     });
 
@@ -168,9 +168,9 @@ app.post('/generate-hindrance', async (req, res) => {
         "Authorization": "Bearer " + gptApiKey
       },
       body: JSON.stringify({
-        model: "gpt-5-nano",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 1
+        temperature: 0.9
       })
     });
 
@@ -225,9 +225,9 @@ app.post('/generate-fortune', async (req, res) => {
         "Authorization": "Bearer " + gptApiKey
       },
       body: JSON.stringify({
-        model: "gpt-5-nano",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 1
+        temperature: 0.9
       })
     });
 
