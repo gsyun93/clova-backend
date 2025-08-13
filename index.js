@@ -47,6 +47,47 @@ app.get('/', (req, res) => {
   });
 });
 
+// 관리자 비밀번호 검증 API 엔드포인트
+app.post('/validate-admin', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    // 입력 데이터 검증
+    if (!password) {
+      return res.status(400).json({ error: '비밀번호가 필요합니다.' });
+    }
+
+    // 환경변수에서 관리자 비밀번호 가져오기
+    const correctPassword = process.env.ADMIN_PASSWORD;
+    
+    if (!correctPassword) {
+      console.error('관리자 비밀번호가 환경변수에 설정되지 않았습니다.');
+      return res.status(500).json({ error: '서버 설정 오류' });
+    }
+
+    // 비밀번호 검증
+    const isValid = password === correctPassword;
+    
+    console.log('관리자 비밀번호 검증:', { 
+      input: password, 
+      correct: correctPassword, 
+      isValid: isValid 
+    });
+
+    res.json({ 
+      isValid: isValid,
+      message: isValid ? '비밀번호가 올바릅니다.' : '비밀번호가 틀렸습니다.'
+    });
+
+  } catch (error) {
+    console.error('관리자 비밀번호 검증 오류:', error);
+    res.status(500).json({ 
+      error: '비밀번호 검증 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
 // 운세 생성 API 엔드포인트
 app.post('/generate-fortune', async (req, res) => {
   try {
