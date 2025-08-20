@@ -13,6 +13,26 @@ const supabaseUrl = 'https://qyqemkcwbapvsxblytln.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// 환경변수에서 API 키 가져오기
+const gptApiKey = process.env.GPT_API_KEY;
+const clovaSecret = process.env.CLOVA_OCR_SECRET;
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+// API 키 검증
+if (!gptApiKey) {
+    console.error('❌ GPT API 키가 설정되지 않았습니다.');
+    console.error('📝 환경변수 GPT_API_KEY를 설정해주세요.');
+    process.exit(1);
+}
+
+if (!clovaSecret) {
+    console.error('❌ CLOVA OCR Secret이 설정되지 않았습니다.');
+    console.error('📝 환경변수 CLOVA_OCR_SECRET을 설정해주세요.');
+    process.exit(1);
+}
+
+console.log('✅ 모든 API 키가 정상적으로 설정되었습니다.');
+
 // 미들웨어 설정
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -27,6 +47,546 @@ app.get('/', (req, res) => {
   });
 });
 
+// 관리자 비밀번호 검증 API 엔드포인트
+app.post('/validate-admin', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    // 입력 데이터 검증
+    if (!password) {
+      return res.status(400).json({ error: '비밀번호가 필요합니다.' });
+    }
+
+    // 환경변수에서 관리자 비밀번호 가져오기
+    const correctPassword = process.env.ADMIN_PASSWORD;
+    
+    if (!correctPassword) {
+      console.error('관리자 비밀번호가 환경변수에 설정되지 않았습니다.');
+      return res.status(500).json({ error: '서버 설정 오류' });
+    }
+
+    // 비밀번호 검증
+    const isValid = password === correctPassword;
+    
+    console.log('관리자 비밀번호 검증:', { 
+      input: password, 
+      correct: correctPassword, 
+      isValid: isValid 
+    });
+
+    res.json({ 
+      isValid: isValid,
+      message: isValid ? '비밀번호가 올바릅니다.' : '비밀번호가 틀렸습니다.'
+    });
+
+  } catch (error) {
+    console.error('관리자 비밀번호 검증 오류:', error);
+    res.status(500).json({ 
+      error: '비밀번호 검증 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 조력자 생성 API 엔드포인트
+app.post('/generate-helper', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 조력자 프롬프트 생성
+    const prompt = generateHelperPrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('조력자 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('조력자 생성 성공');
+    
+    // 조력자 결과 파싱 및 반환
+    const helperResult = parseHelperResult(text);
+    res.json(helperResult);
+
+  } catch (error) {
+    console.error('조력자 생성 오류:', error);
+    res.status(500).json({ 
+      error: '조력자 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 방해꾼 생성 API 엔드포인트
+app.post('/generate-hindrance', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 방해꾼 프롬프트 생성
+    const prompt = generateHindrancePrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('방해꾼 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('방해꾼 생성 성공');
+    
+    // 방해꾼 결과 파싱 및 반환
+    const hindranceResult = parseHindranceResult(text);
+    res.json(hindranceResult);
+
+  } catch (error) {
+    console.error('방해꾼 생성 오류:', error);
+    res.status(500).json({ 
+      error: '방해꾼 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 운세 생성 API 엔드포인트
+app.post('/generate-fortune', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 운세 프롬프트 생성
+    const prompt = generateFortunePrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('운세 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('운세 생성 성공');
+    
+    // 운세 결과 파싱 및 반환
+    const fortuneResult = parseFortuneResult(text);
+    res.json(fortuneResult);
+
+  } catch (error) {
+    console.error('운세 생성 오류:', error);
+    res.status(500).json({ 
+      error: '운세 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 조력자 프롬프트 생성 함수
+function generateHelperPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 그에게 잘 맞을만한 사람의 MBTI, 별자리, 띠를 추천해주세요.
+
+**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
+
+**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+{
+  "mbti": "잘맞는 MBTI",
+  "mbti_reason": "잘맞는 이유",
+  "zodiac": "잘맞는 별자리",
+  "zodiac_reason": "잘맞는 이유",
+  "animal": "잘맞는 띠",
+  "animal_reason": "잘맞는 이유"
+}`;
+}
+
+// 장애물 프롬프트 생성 함수
+function generateHindrancePrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 그에 맞는 조심해야 할 사람의 MBTI, 별자리, 띠를 알려주세요.
+
+**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
+
+**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+{
+  "mbti": "조심해야할 MBTI",
+  "mbti_reason": "조심 이유",
+  "zodiac": "조심해야할 별자리",
+  "zodiac_reason": "조심 이유",
+  "animal": "조심해야할 띠",
+  "animal_reason": "조심 이유"
+}`;
+}
+
+// 운세 프롬프트 생성 함수
+function generateFortunePrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `
+당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+오늘 하루, 사용자의 정보를 바탕으로 신뢰감 있으면서도 행동을 지시하는 운세를 반말로 제시해주세요.
+운세 요약은 띠, 별자리, 사주 분석을 바탕으로 정리하되,
+사용자가 오늘 하루를 기대하게 만들 수 있는 따뜻하고 설득력 있는 문장으로 구성해 주세요 (문장 내 ; 사용 금지).
+
+[운세 요약 생성 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: 지지(80%), 별자리(10%), 띠(10%) 중 하나를 포함하여 문장 생성
+- 문체: 신뢰감 있으면서도 예측 불가능한 표현 사용
+- 분위기: 따뜻한 듯하면서도 소름 돋고, 조용한 흥분과 기대가 느껴지게
+- 목적: 읽는 사람이 행동하게 만들 것. 단순한 위로 금지.
+
+예시)
+- 천칭자리는 오늘 익숙한 공간 안에서 낯선 기운을 느끼게 돼, 이상해도 한 발 더 다가가야 해  
+- 자시에 태어난 너는 오늘 오후 느닷없는 침묵을 마주치게 돼, 그 순간 눈을 피하지 마 
+- 말띠는 오늘 거리에서 마주치는 우연에 기대 이상의 의미가 담겨 있어, 그걸 그냥 지나치지 마
+
+${data.mbti ? `[MBTI 처방전 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: MBTI 유형 + 실행 유도 행동 제안
+- 문체: 마치 친한 AI가 속삭이듯, 부드럽지만 명확하게
+- 목적: 오늘 하루를 구체적으로 움직이게 만드는 실용적 제안
+- 뻔한 성격 분석, 일반 조언 금지
+
+예시)
+- ENFP는 오늘 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
+- INTJ는 오늘 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
+
+사용자 정보:
+성별: ${data.gender || '입력되지 않음'}
+생년월일: ${data.birthdate}
+출생시간: ${zodiacHour}
+띠: ${zodiac}띠
+별자리: ${starSign}
+${data.mbti ? `MBTI: ${data.mbti}` : ''}
+
+[출력 형식]
+운세 요약: 위에서 제시한 조건에 맞춰 운세 요약을 생성해주세요.
+${data.mbti ? 'MBTI 처방전: 위에서 제시한 조건에 맞춰 MBTI 처방전을 생성해주세요.' : ''}`;
+}
+
+// 운세 결과 파싱 함수
+function parseFortuneResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // 확률 기반으로 점수 생성
+  const scores = {
+    money: generateRandomScore(),
+    love: generateRandomScore(),
+    career: generateRandomScore(),
+    health: generateRandomScore()
+  };
+
+  // 종합 지수 계산 (단순 평균)
+  const totalScore = Math.round(
+    (scores.money + scores.love + scores.career + scores.health) / 4
+  );
+
+  return {
+    money: scores.money,
+    love: scores.love,
+    career: scores.career,
+    health: scores.health,
+    total: totalScore,
+    fortune: extractTextBlock(lines, '운세 요약:') || '오늘은 좋은 일이 가득할 것입니다.',
+    mbtiTip: extractTextBlock(lines, 'MBTI 처방전:') || 'MBTI 특성을 살려 오늘 하루를 보내세요.'
+  };
+}
+
+// 조력자 결과 파싱 함수
+function parseHelperResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      mbti: extractTextBlock(lines, 'mbti:') || 'INTJ',
+      mbti_reason: extractTextBlock(lines, 'mbti_reason:') || '오류로 인해 기본값을 사용합니다.',
+      zodiac: extractTextBlock(lines, 'zodiac:') || '물병자리',
+      zodiac_reason: extractTextBlock(lines, 'zodiac_reason:') || '오류로 인해 기본값을 사용합니다.',
+      animal: extractTextBlock(lines, 'animal:') || '쥐띠',
+      animal_reason: extractTextBlock(lines, 'animal_reason:') || '오류로 인해 기본값을 사용합니다.'
+    };
+  }
+}
+
+// 방해꾼 결과 파싱 함수
+function parseHindranceResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      mbti: extractTextBlock(lines, 'mbti:') || 'ISTJ',
+      mbti_reason: extractTextBlock(lines, 'mbti_reason:') || '오늘은 너무 체계적이고 보수적인 접근을 피하는 것이 좋겠습니다.',
+      zodiac: extractTextBlock(lines, 'zodiac:') || '전갈자리',
+      zodiac_reason: extractTextBlock(lines, 'zodiac_reason:') || '오늘은 과도한 집착이나 의심을 조심해야 합니다.',
+      animal: extractTextBlock(lines, 'animal:') || '뱀띠',
+      animal_reason: extractTextBlock(lines, 'animal_reason:') || '뱀띠의 교묘한 기운이 오늘 갈등을 일으킬 수 있습니다.'
+    };
+  }
+}
+
+// 확률 기반 점수 생성 함수
+function generateRandomScore() {
+  const random = Math.random() * 100;
+  
+  if (random < 8) return Math.floor(Math.random() * 6) + 95;    // 95-100점: 8%
+  if (random < 25) return Math.floor(Math.random() * 5) + 90;   // 90-94점: 17%
+  if (random < 65) return Math.floor(Math.random() * 10) + 80;  // 80-89점: 40%
+  if (random < 80) return Math.floor(Math.random() * 5) + 75;   // 75-79점: 15%
+  if (random < 90) return Math.floor(Math.random() * 10) + 70;  // 70-79점: 10%
+  if (random < 98) return Math.floor(Math.random() * 10) + 60;  // 60-69점: 8%
+  return Math.floor(Math.random() * 10) + 50;                  // 50-59점: 2%
+}
+
+// 텍스트 블록 추출 함수
+function extractTextBlock(lines, label) {
+  const startIndex = lines.findIndex(line => line.includes(label));
+  if (startIndex === -1) return '';
+  
+  const text = lines[startIndex].replace(label, '').trim();
+  return text;
+}
+
+// 띠 계산 함수
+function calculateZodiac(year) {
+  const zodiacSigns = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
+  return zodiacSigns[(year - 4) % 12];
+}
+
+// 별자리 계산 함수
+function calculateStarSign(month, day) {
+  const starSigns = [
+    { name: '물병자리', start: [1, 20], end: [2, 18] },
+    { name: '물고기자리', start: [2, 19], end: [3, 20] },
+    { name: '양자리', start: [3, 21], end: [4, 19] },
+    { name: '황소자리', start: [4, 20], end: [5, 20] },
+    { name: '쌍둥이자리', start: [5, 21], end: [6, 21] },
+    { name: '게자리', start: [6, 22], end: [7, 22] },
+    { name: '사자자리', start: [7, 23], end: [8, 22] },
+    { name: '처녀자리', start: [8, 23], end: [9, 22] },
+    { name: '천칭자리', start: [9, 23], end: [10, 22] },
+    { name: '전갈자리', start: [10, 23], end: [11, 21] },
+    { name: '사수자리', start: [11, 22], end: [12, 21] },
+    { name: '염소자리', start: [12, 22], end: [1, 19] }
+  ];
+
+  for (const sign of starSigns) {
+    if (isInDateRange(month, day, sign.start, sign.end)) {
+      return sign.name;
+    }
+  }
+  return '물병자리';
+}
+
+// 날짜 범위 확인 함수
+function isInDateRange(month, day, start, end) {
+  const current = month * 100 + day;
+  const startDate = start[0] * 100 + start[1];
+  const endDate = end[0] * 100 + end[1];
+
+  if (startDate <= endDate) {
+    return current >= startDate && current <= endDate;
+  } else {
+    return current >= startDate || current <= endDate;
+  }
+}
+
+// 시간대별 별자리 계산 함수
+function calculateZodiacHour(hour, minute) {
+  const timeSlots = [
+    { name: '자시(子時)', start: 23, end: 1 },
+    { name: '축시(丑時)', start: 1, end: 3 },
+    { name: '인시(寅時)', start: 3, end: 5 },
+    { name: '묘시(卯時)', start: 5, end: 7 },
+    { name: '진시(辰時)', start: 7, end: 9 },
+    { name: '사시(巳時)', start: 9, end: 11 },
+    { name: '오시(午時)', start: 11, end: 13 },
+    { name: '미시(未時)', start: 13, end: 15 },
+    { name: '신시(申時)', start: 15, end: 17 },
+    { name: '유시(酉時)', start: 17, end: 19 },
+    { name: '술시(戌時)', start: 19, end: 21 },
+    { name: '해시(亥時)', start: 21, end: 23 }
+  ];
+
+  for (const slot of timeSlots) {
+    if (hour >= slot.start && hour < slot.end) {
+      return slot.name;
+    }
+  }
+  return '자시(子時)';
+}
+
 // CLOVA OCR 엔드포인트
 app.post('/clova-ocr', async (req, res) => {
   try {
@@ -40,7 +600,7 @@ app.post('/clova-ocr', async (req, res) => {
     }
 
     // CLOVA OCR Secret 확인
-    if (!process.env.CLOVA_OCR_SECRET) {
+    if (!clovaSecret) {
       console.error('CLOVA OCR Secret이 설정되지 않았습니다.');
       return res.status(500).json({ 
         error: '서버 설정 오류: CLOVA OCR Secret이 필요합니다.' 
@@ -64,14 +624,40 @@ app.post('/clova-ocr', async (req, res) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-OCR-SECRET': process.env.CLOVA_OCR_SECRET
+          'X-OCR-SECRET': clovaSecret
         },
         timeout: 30000 // 30초 타임아웃
       }
     );
 
     console.log('CLOVA OCR API 응답 성공');
-    res.json(response.data);
+    
+    // CLOVA OCR 응답에서 텍스트 추출
+    let ocrText = '';
+    if (response.data && response.data.images && response.data.images.length > 0) {
+        const image = response.data.images[0];
+        if (image.fields) {
+            // fields 배열에서 텍스트 추출
+            ocrText = image.fields.map(field => field.inferText).join(' ');
+        } else if (image.text) {
+            // text 필드가 있는 경우
+            ocrText = image.text;
+        }
+    }
+    
+    // 텍스트가 없으면 에러 반환
+    if (!ocrText) {
+        console.warn('CLOVA OCR에서 텍스트를 추출할 수 없습니다.');
+        return res.status(400).json({
+            error: 'OCR 결과에서 텍스트를 추출할 수 없습니다.',
+            details: '이미지가 명확하지 않거나 OCR 인식에 실패했습니다.'
+        });
+    }
+    
+    console.log('추출된 OCR 텍스트:', ocrText);
+    
+    // 텍스트만 반환 (프론트엔드가 기대하는 형식)
+    res.json({ text: ocrText });
 
   } catch (err) {
     console.error('CLOVA OCR API 오류:', err?.response?.data || err.message);
@@ -183,7 +769,8 @@ app.get('/api/statistics', async (req, res) => {
       const currentYear = new Date().getFullYear();
       const age = currentYear - birthYear;
       let ageGroup = '50대+';
-      if (age < 30) ageGroup = '20대';
+      if (age < 20) ageGroup = '10대';
+      else if (age < 30) ageGroup = '20대';
       else if (age < 40) ageGroup = '30대';
       else if (age < 50) ageGroup = '40대';
       ageStats[ageGroup] = (ageStats[ageGroup] || 0) + 1;
