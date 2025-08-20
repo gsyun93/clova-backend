@@ -703,9 +703,8 @@ app.post('/api/ocr-dropout', async (req, res) => {
     const { data, error } = await supabase
       .from('ocr_dropouts')
       .insert([{
-        reason,
-        timestamp: timestamp || new Date().toISOString(),
-        created_at: new Date().toISOString()
+        reason
+        // created_at은 자동으로 설정됨 (DEFAULT now())
       }])
       .select();
 
