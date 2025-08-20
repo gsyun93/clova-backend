@@ -790,6 +790,18 @@ app.get('/api/statistics', async (req, res) => {
       weekdayStats[item.weekday] = (weekdayStats[item.weekday] || 0) + 1;
     });
 
+    // OCR 이탈률 계산
+    // AI 컨텐츠 선택 횟수 (운세, 조력자, 방해꾼)
+    const aiContentSelections = (serviceStats['운세'] || 0) + (serviceStats['조력자'] || 0) + (serviceStats['방해꾼'] || 0);
+    
+    // OCR 모달 이탈 횟수 (포기하기 클릭 + 타임아웃 등)
+    // 현재는 포기하기 클릭만 추적 가능하므로, 임시로 0으로 설정
+    // 실제 구현에서는 별도 테이블이나 필드로 추적 필요
+    const ocrDropouts = 0; // TODO: 실제 OCR 이탈 데이터로 교체
+    
+    // OCR 이탈률 계산 (퍼센트)
+    const ocrDropoutRate = aiContentSelections > 0 ? Math.round((ocrDropouts / aiContentSelections) * 100) : 0;
+
     res.json({
       success: true,
       total_users: totalUsers,
@@ -799,6 +811,7 @@ app.get('/api/statistics', async (req, res) => {
       service_stats: serviceStats,
       time_stats: timeStats,
       weekday_stats: weekdayStats,
+      ocr_dropout_rate: ocrDropoutRate,
       raw_data: data
     });
 
