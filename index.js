@@ -173,15 +173,6 @@ app.get('/api/statistics', async (req, res) => {
     const serviceStats = {};
     const timeStats = {};
     const weekdayStats = {};
-    
-    // OCR 이탈률 통계
-    const ocrDropoutStats = {
-      total_content_selections: 0,
-      ocr_completed: 0,
-      ocr_skipped: 0,
-      ocr_returned: 0,
-      dropout_rate: 0
-    };
 
     data.forEach(item => {
       // 성별 통계
@@ -210,20 +201,7 @@ app.get('/api/statistics', async (req, res) => {
       
       // 요일 통계
       weekdayStats[item.weekday] = (weekdayStats[item.weekday] || 0) + 1;
-      
-      // OCR 이탈률 통계 계산
-      if (item.ocr_modal_entered) {
-        ocrDropoutStats.total_content_selections++;
-        if (item.ocr_completed) ocrDropoutStats.ocr_completed++;
-        if (item.ocr_skipped) ocrDropoutStats.ocr_skipped++;
-        if (item.ocr_returned) ocrDropoutStats.ocr_returned++;
-      }
     });
-    
-    // OCR 이탈률 계산
-    ocrDropoutStats.dropout_rate = ocrDropoutStats.total_content_selections > 0 
-      ? ((ocrDropoutStats.ocr_skipped + ocrDropoutStats.ocr_returned) / ocrDropoutStats.total_content_selections * 100).toFixed(1)
-      : 0;
 
     res.json({
       success: true,
@@ -234,7 +212,6 @@ app.get('/api/statistics', async (req, res) => {
       service_stats: serviceStats,
       time_stats: timeStats,
       weekday_stats: weekdayStats,
-      ocr_dropout_stats: ocrDropoutStats,
       raw_data: data
     });
 
