@@ -887,6 +887,7 @@ app.get('/api/statistics', async (req, res) => {
       time_stats: timeStats,
       weekday_stats: weekdayStats,
       ocr_dropout_rate: ocrDropoutRate,
+      ocr_dropout_count: todayOcrDropouts,
       raw_data: data
     });
 
