@@ -699,18 +699,29 @@ app.post('/api/ocr-dropout', async (req, res) => {
 
     console.log('OCR 이탈 데이터 저장 요청:', { reason, timestamp: timestamp || new Date().toISOString() });
 
-    // Supabase에 OCR 이탈 데이터 저장 (임시로 메모리에 저장)
-    // 실제 구현에서는 ocr_dropouts 테이블을 생성해야 함
-    const dropoutData = {
-      reason,
-      timestamp: timestamp || new Date().toISOString()
-    };
+    // Supabase에 OCR 이탈 데이터 저장
+    const { data, error } = await supabase
+      .from('ocr_dropouts')
+      .insert([{
+        reason,
+        timestamp: timestamp || new Date().toISOString(),
+        created_at: new Date().toISOString()
+      }])
+      .select();
 
-    console.log('OCR 이탈 데이터 저장 성공:', dropoutData);
+    if (error) {
+      console.error('Supabase OCR 이탈 데이터 저장 오류:', error);
+      return res.status(500).json({
+        error: 'OCR 이탈 데이터 저장 실패',
+        details: error.message
+      });
+    }
+
+    console.log('OCR 이탈 데이터 저장 성공:', data);
     res.status(201).json({
       success: true,
       message: 'OCR 이탈 데이터가 저장되었습니다.',
-      data: dropoutData
+      data: data[0]
     });
 
   } catch (err) {
@@ -828,16 +839,44 @@ app.get('/api/statistics', async (req, res) => {
       weekdayStats[item.weekday] = (weekdayStats[item.weekday] || 0) + 1;
     });
 
-    // OCR 이탈률 계산
-    // AI 컨텐츠 선택 횟수 (운세, 조력자, 방해꾼)
-    const aiContentSelections = (serviceStats['운세'] || 0) + (serviceStats['조력자'] || 0) + (serviceStats['방해꾼'] || 0);
+    // OCR 이탈률 계산 (데일리)
+    // AI 컨텐츠 선택 횟수 (운세, 조력자, 방해꾼) - 오늘만
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
     
-    // OCR 모달 이탈 횟수 (포기하기 클릭 + 타임아웃 등)
-    // 현재는 임시로 AI 컨텐츠 선택의 15%로 설정 (실제 데이터로 교체 필요)
-    const ocrDropouts = Math.round(aiContentSelections * 0.15);
+    // 오늘 AI 컨텐츠 선택 횟수 계산
+    const todayAiContentSelections = data.filter(item => {
+      const itemDate = new Date(item.created_at);
+      return itemDate >= new Date(todayStart) && itemDate < new Date(todayEnd) &&
+             ['운세', '조력자', '방해꾼'].includes(item.selected_service);
+    }).length;
     
-    // OCR 이탈률 계산 (퍼센트)
-    const ocrDropoutRate = aiContentSelections > 0 ? Math.round((ocrDropouts / aiContentSelections) * 100) : 0;
+    // 오늘 OCR 이탈 횟수 조회
+    let todayOcrDropouts = 0;
+    try {
+      const { data: dropoutData, error: dropoutError } = await supabase
+        .from('ocr_dropouts')
+        .select('*')
+        .gte('created_at', todayStart)
+        .lt('created_at', todayEnd);
+      
+      if (!dropoutError && dropoutData) {
+        todayOcrDropouts = dropoutData.length;
+        console.log('오늘 OCR 이탈 데이터:', todayOcrDropouts, '건');
+      }
+    } catch (dropoutErr) {
+      console.error('OCR 이탈 데이터 조회 오류:', dropoutErr);
+    }
+    
+    // OCR 이탈률 계산 (퍼센트) - 오늘만
+    const ocrDropoutRate = todayAiContentSelections > 0 ? Math.round((todayOcrDropouts / todayAiContentSelections) * 100) : 0;
+    
+    console.log('데일리 OCR 이탈률 계산:', {
+      todayAiContentSelections,
+      todayOcrDropouts,
+      ocrDropoutRate: ocrDropoutRate + '%'
+    });
 
     res.json({
       success: true,
@@ -932,6 +971,36 @@ app.get('/api/statistics/export', async (req, res) => {
   }
 });
 
+// 수동 데이터 정리 API (관리자용)
+app.post('/api/cleanup', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    // 관리자 비밀번호 검증
+    if (password !== process.env.ADMIN_PASSWORD) {
+      return res.status(401).json({
+        error: '관리자 권한이 필요합니다.'
+      });
+    }
+    
+    console.log('수동 데이터 정리 요청됨');
+    await cleanupOldData();
+    
+    res.json({
+      success: true,
+      message: '데이터 정리가 완료되었습니다.',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (err) {
+    console.error('수동 데이터 정리 오류:', err);
+    res.status(500).json({
+      error: '데이터 정리 중 오류 발생',
+      message: err.message
+    });
+  }
+});
+
 // 404 핸들러
 app.use('*', (req, res) => {
   res.status(404).json({ 
@@ -947,6 +1016,58 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ===== OCR 이탈률 데일리 자동 정리 =====
+
+// 매일 자정에 OCR 이탈 데이터만 삭제 (다른 통계는 누적 유지)
+function scheduleDailyCleanup() {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+  
+  // 자정까지 대기 후 실행
+  setTimeout(async () => {
+    await cleanupOldData();
+    // 이후 24시간마다 반복
+    setInterval(cleanupOldData, 24 * 60 * 60 * 1000);
+  }, timeUntilMidnight);
+  
+  console.log('OCR 이탈률 데일리 정리 스케줄 설정 완료');
+}
+
+// 이전 날짜 데이터 삭제 함수 (OCR 이탈 데이터만)
+async function cleanupOldData() {
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStart = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).toISOString();
+    
+    console.log('OCR 이탈 데이터 데일리 정리 시작:', yesterdayStart);
+    
+    // OCR 이탈 데이터만 어제 데이터 삭제 (ocr_dropouts 테이블)
+    const { error: dropoutError } = await supabase
+      .from('ocr_dropouts')
+      .delete()
+      .lt('created_at', yesterdayStart);
+    
+    if (dropoutError) {
+      console.error('ocr_dropouts 테이블 정리 오류:', dropoutError);
+    } else {
+      console.log('ocr_dropouts 테이블 어제 데이터 삭제 완료');
+    }
+    
+    // statistics 테이블은 누적 데이터로 유지 (삭제하지 않음)
+    console.log('statistics 테이블은 누적 데이터로 유지됨');
+    
+    console.log('OCR 이탈 데이터 데일리 정리 완료');
+    
+  } catch (error) {
+    console.error('OCR 이탈 데이터 정리 중 오류:', error);
+  }
+}
+
+// 서버 시작 시 스케줄 설정
+scheduleDailyCleanup();
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
@@ -954,4 +1075,5 @@ app.listen(PORT, () => {
   console.log(`📝 OCR 엔드포인트: http://localhost:${PORT}/clova-ocr`);
   console.log(`📊 통계 API 엔드포인트: http://localhost:${PORT}/api/statistics`);
   console.log(`🔍 헬스체크: http://localhost:${PORT}/`);
+  console.log(`🧹 OCR 이탈률 데일리 자동 정리 활성화됨 (다른 통계는 누적 유지)`);
 }); 
