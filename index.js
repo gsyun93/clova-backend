@@ -131,9 +131,16 @@ app.post('/generate-helper', async (req, res) => {
     }
 
     console.log('조력자 생성 성공');
+    console.log('=== AI가 생성한 조력자 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
     
     // 조력자 결과 파싱 및 반환
     const helperResult = parseHelperResult(text);
+    console.log('=== 파싱된 조력자 결과 ===');
+    console.log(helperResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
     res.json(helperResult);
 
   } catch (error) {
@@ -188,9 +195,16 @@ app.post('/generate-hindrance', async (req, res) => {
     }
 
     console.log('방해꾼 생성 성공');
+    console.log('=== AI가 생성한 방해꾼 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
     
     // 방해꾼 결과 파싱 및 반환
     const hindranceResult = parseHindranceResult(text);
+    console.log('=== 파싱된 방해꾼 결과 ===');
+    console.log(hindranceResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
     res.json(hindranceResult);
 
   } catch (error) {
@@ -245,9 +259,16 @@ app.post('/generate-fortune', async (req, res) => {
     }
 
     console.log('운세 생성 성공');
+    console.log('=== AI가 생성한 운세 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
     
     // 운세 결과 파싱 및 반환
     const fortuneResult = parseFortuneResult(text);
+    console.log('=== 파싱된 운세 결과 ===');
+    console.log(fortuneResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
     res.json(fortuneResult);
 
   } catch (error) {
