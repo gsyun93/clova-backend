@@ -297,7 +297,7 @@ function generateUnconsciousPrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 심리학, 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 심리 분석 전문가입니다.
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
 사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 가진 무의식의 모습을 파악해주세요.
 
 사용자 정보:
@@ -308,9 +308,9 @@ function generateUnconsciousPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 {
-  "unconscious_title": "오늘의 무의식 제목 (예: 불안한 도망자)",
+  "unconscious_title": "무의식 제목",
   "unconscious_interpretation": "무의식 해석 (35-50자)",
   "unconscious_message": "오늘의 메시지 (35-50자)"
 }`;
@@ -333,7 +333,7 @@ function generatePersonaPrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 심리학, 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 심리 분석 전문가입니다.
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
 사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 사회에서 보여주는 페르소나(사회적 가면)의 모습을 파악해주세요.
 
 사용자 정보:
@@ -344,9 +344,9 @@ function generatePersonaPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 {
-  "persona_title": "오늘의 페르소나 제목 (예: 차가운 관망자)",
+  "persona_title": "페르소나 제목",
   "persona_interpretation": "페르소나 해석 (35-50자)",
   "persona_message": "오늘의 메시지 (35-50자)"
 }`;
