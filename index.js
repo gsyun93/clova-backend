@@ -297,12 +297,8 @@ function generateUnconsciousPrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
 사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 가진 무의식의 모습을 구체적으로 분석해주세요.
-
-**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
-
-**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
 
 사용자 정보:
 - 성별: ${data.gender || '미입력'}
@@ -312,7 +308,7 @@ function generateUnconsciousPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 무의식: 불안한 도망자
@@ -321,8 +317,8 @@ function generateUnconsciousPrompt(data) {
 
 {
   "unconscious_title": "구체적인 무의식 제목",
-  "unconscious_interpretation": "구체적인 무의식 해석 (35-50자)",
-  "unconscious_message": "구체적인 오늘의 메시지 (35-50자)"
+  "unconscious_interpretation": "마침표 없이 구체적인 무의식 해석 (50-60자)",
+  "unconscious_message": "마침표 없이 구체적인 오늘의 메시지 (50-60자)"
 }`;
 }
 
@@ -343,12 +339,8 @@ function generatePersonaPrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
 사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 사회에서 보여주는 페르소나(사회적 가면)의 모습을 구체적으로 분석해주세요.
-
-**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
-
-**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
 
 사용자 정보:
 - 성별: ${data.gender || '미입력'}
@@ -358,7 +350,7 @@ function generatePersonaPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 페르소나: 차가운 관망자 
@@ -367,8 +359,8 @@ function generatePersonaPrompt(data) {
 
 {
   "persona_title": "구체적인 페르소나 제목",
-  "persona_interpretation": "구체적인 페르소나 해석 (35-50자)",
-  "persona_message": "구체적인 오늘의 메시지 (35-50자)"
+  "persona_interpretation": "마침표 없이 구체적인 페르소나 해석 (50-60자)",
+  "persona_message": "마침표 없이 구체적인 오늘의 메시지 (50-60자)"
 }`;
 }
 
