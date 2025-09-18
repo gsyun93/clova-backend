@@ -88,8 +88,8 @@ app.post('/validate-admin', async (req, res) => {
   }
 });
 
-// 조력자 생성 API 엔드포인트
-app.post('/generate-helper', async (req, res) => {
+// 무의식 생성 API 엔드포인트
+app.post('/generate-unconscious', async (req, res) => {
   try {
     const { birthdate, birthtime, mbti, gender } = req.body;
     
@@ -98,10 +98,10 @@ app.post('/generate-helper', async (req, res) => {
       return res.status(400).json({ error: '생년월일이 필요합니다.' });
     }
 
-    // 조력자 프롬프트 생성
-    const prompt = generateHelperPrompt({ birthdate, birthtime, mbti, gender });
+    // 무의식 프롬프트 생성
+    const prompt = generateUnconsciousPrompt({ birthdate, birthtime, mbti, gender });
     
-    console.log('조력자 생성 시작:', { birthdate, birthtime, mbti, gender });
+    console.log('무의식 생성 시작:', { birthdate, birthtime, mbti, gender });
     
     // OpenAI API 호출
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -130,30 +130,30 @@ app.post('/generate-helper', async (req, res) => {
       throw new Error('OpenAI 응답이 비어있습니다');
     }
 
-    console.log('조력자 생성 성공');
-    console.log('=== AI가 생성한 조력자 내용 ===');
+    console.log('무의식 생성 성공');
+    console.log('=== AI가 생성한 무의식 내용 ===');
     console.log(text);
     console.log('=== AI 응답 끝 ===');
     
-    // 조력자 결과 파싱 및 반환
-    const helperResult = parseHelperResult(text);
-    console.log('=== 파싱된 조력자 결과 ===');
-    console.log(helperResult);
+    // 무의식 결과 파싱 및 반환
+    const unconsciousResult = parseUnconsciousResult(text);
+    console.log('=== 파싱된 무의식 결과 ===');
+    console.log(unconsciousResult);
     console.log('=== 파싱 결과 끝 ===');
     
-    res.json(helperResult);
+    res.json(unconsciousResult);
 
   } catch (error) {
-    console.error('조력자 생성 오류:', error);
+    console.error('무의식 생성 오류:', error);
     res.status(500).json({ 
-      error: '조력자 생성 중 오류 발생',
+      error: '무의식 생성 중 오류 발생',
       message: error.message 
     });
   }
 });
 
-// 방해꾼 생성 API 엔드포인트
-app.post('/generate-hindrance', async (req, res) => {
+// 페르소나 생성 API 엔드포인트
+app.post('/generate-persona', async (req, res) => {
   try {
     const { birthdate, birthtime, mbti, gender } = req.body;
     
@@ -162,10 +162,10 @@ app.post('/generate-hindrance', async (req, res) => {
       return res.status(400).json({ error: '생년월일이 필요합니다.' });
     }
 
-    // 방해꾼 프롬프트 생성
-    const prompt = generateHindrancePrompt({ birthdate, birthtime, mbti, gender });
+    // 페르소나 프롬프트 생성
+    const prompt = generatePersonaPrompt({ birthdate, birthtime, mbti, gender });
     
-    console.log('방해꾼 생성 시작:', { birthdate, birthtime, mbti, gender });
+    console.log('페르소나 생성 시작:', { birthdate, birthtime, mbti, gender });
     
     // OpenAI API 호출
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -194,23 +194,23 @@ app.post('/generate-hindrance', async (req, res) => {
       throw new Error('OpenAI 응답이 비어있습니다');
     }
 
-    console.log('방해꾼 생성 성공');
-    console.log('=== AI가 생성한 방해꾼 내용 ===');
+    console.log('페르소나 생성 성공');
+    console.log('=== AI가 생성한 페르소나 내용 ===');
     console.log(text);
     console.log('=== AI 응답 끝 ===');
     
-    // 방해꾼 결과 파싱 및 반환
-    const hindranceResult = parseHindranceResult(text);
-    console.log('=== 파싱된 방해꾼 결과 ===');
-    console.log(hindranceResult);
+    // 페르소나 결과 파싱 및 반환
+    const personaResult = parsePersonaResult(text);
+    console.log('=== 파싱된 페르소나 결과 ===');
+    console.log(personaResult);
     console.log('=== 파싱 결과 끝 ===');
     
-    res.json(hindranceResult);
+    res.json(personaResult);
 
   } catch (error) {
-    console.error('방해꾼 생성 오류:', error);
+    console.error('페르소나 생성 오류:', error);
     res.status(500).json({ 
-      error: '방해꾼 생성 중 오류 발생',
+      error: '페르소나 생성 중 오류 발생',
       message: error.message 
     });
   }
@@ -280,8 +280,8 @@ app.post('/generate-fortune', async (req, res) => {
   }
 });
 
-// 조력자 프롬프트 생성 함수
-function generateHelperPrompt(data) {
+// 무의식 프롬프트 생성 함수
+function generateUnconsciousPrompt(data) {
   const birthdate = data.birthdate;
   const year = parseInt(birthdate.substring(0, 4));
   const month = parseInt(birthdate.substring(4, 6));
@@ -297,12 +297,8 @@ function generateHelperPrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 그에게 잘 맞을만한 사람의 MBTI, 별자리, 띠를 추천해주세요.
-
-**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
-
-**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
+  return `당신은 심리학, 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 심리 분석 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 가진 무의식의 모습을 파악해주세요.
 
 사용자 정보:
 - 성별: ${data.gender || '미입력'}
@@ -314,17 +310,14 @@ function generateHelperPrompt(data) {
 
 다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 {
-  "mbti": "잘맞는 MBTI",
-  "mbti_reason": "잘맞는 이유",
-  "zodiac": "잘맞는 별자리",
-  "zodiac_reason": "잘맞는 이유",
-  "animal": "잘맞는 띠",
-  "animal_reason": "잘맞는 이유"
+  "unconscious_title": "오늘의 무의식 제목 (예: 불안한 도망자)",
+  "unconscious_interpretation": "무의식 해석 (35-50자)",
+  "unconscious_message": "오늘의 메시지 (35-50자)"
 }`;
 }
 
-// 장애물 프롬프트 생성 함수
-function generateHindrancePrompt(data) {
+// 페르소나 프롬프트 생성 함수
+function generatePersonaPrompt(data) {
   const birthdate = data.birthdate;
   const year = parseInt(birthdate.substring(0, 4));
   const month = parseInt(birthdate.substring(4, 6));
@@ -340,12 +333,8 @@ function generateHindrancePrompt(data) {
     zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
 
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 그에 맞는 조심해야 할 사람의 MBTI, 별자리, 띠를 알려주세요.
-
-**중요: 띠는 다음 12가지 중에서만 선택해야 합니다: 쥐띠, 소띠, 호랑이띠, 토끼띠, 용띠, 뱀띠, 말띠, 양띠, 원숭이띠, 닭띠, 개띠, 돼지띠**
-
-**중요: 별자리는 다음 12가지 중에서만 선택해야 합니다: 물병자리, 물고기자리, 양자리, 황소자리, 쌍둥이자리, 게자리, 사자자리, 처녀자리, 천칭자리, 전갈자리, 사수자리, 염소자리**
+  return `당신은 심리학, 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 심리 분석 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 사회에서 보여주는 페르소나(사회적 가면)의 모습을 파악해주세요.
 
 사용자 정보:
 - 성별: ${data.gender || '미입력'}
@@ -357,12 +346,9 @@ function generateHindrancePrompt(data) {
 
 다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 {
-  "mbti": "조심해야할 MBTI",
-  "mbti_reason": "조심 이유",
-  "zodiac": "조심해야할 별자리",
-  "zodiac_reason": "조심 이유",
-  "animal": "조심해야할 띠",
-  "animal_reason": "조심 이유"
+  "persona_title": "오늘의 페르소나 제목 (예: 차가운 관망자)",
+  "persona_interpretation": "페르소나 해석 (35-50자)",
+  "persona_message": "오늘의 메시지 (35-50자)"
 }`;
 }
 
@@ -453,8 +439,8 @@ function parseFortuneResult(text) {
   };
 }
 
-// 조력자 결과 파싱 함수
-function parseHelperResult(text) {
+// 무의식 결과 파싱 함수
+function parseUnconsciousResult(text) {
   const lines = text.split('\n').map(l => l.trim());
   
   // JSON 응답에서 직접 파싱 시도
@@ -475,18 +461,15 @@ function parseHelperResult(text) {
     
     // 텍스트 블록 추출으로 폴백
     return {
-      mbti: extractTextBlock(lines, 'mbti:') || 'INTJ',
-      mbti_reason: extractTextBlock(lines, 'mbti_reason:') || '오류로 인해 기본값을 사용합니다.',
-      zodiac: extractTextBlock(lines, 'zodiac:') || '물병자리',
-      zodiac_reason: extractTextBlock(lines, 'zodiac_reason:') || '오류로 인해 기본값을 사용합니다.',
-      animal: extractTextBlock(lines, 'animal:') || '쥐띠',
-      animal_reason: extractTextBlock(lines, 'animal_reason:') || '오류로 인해 기본값을 사용합니다.'
+      unconscious_title: extractTextBlock(lines, 'unconscious_title:') || '불안한 도망자',
+      unconscious_interpretation: extractTextBlock(lines, 'unconscious_interpretation:') || '겉으론 당당하지만, 속으론 책임을 피하고 싶은 마음이 강합니다.',
+      unconscious_message: extractTextBlock(lines, 'unconscious_message:') || '책임을 미루고 싶은 순간일수록, 작은 결단 하나가 내일의 안정을 만들어줍니다.'
     };
   }
 }
 
-// 방해꾼 결과 파싱 함수
-function parseHindranceResult(text) {
+// 페르소나 결과 파싱 함수
+function parsePersonaResult(text) {
   const lines = text.split('\n').map(l => l.trim());
   
   // JSON 응답에서 직접 파싱 시도
@@ -507,12 +490,9 @@ function parseHindranceResult(text) {
     
     // 텍스트 블록 추출으로 폴백
     return {
-      mbti: extractTextBlock(lines, 'mbti:') || 'ISTJ',
-      mbti_reason: extractTextBlock(lines, 'mbti_reason:') || '오늘은 너무 체계적이고 보수적인 접근을 피하는 것이 좋겠습니다.',
-      zodiac: extractTextBlock(lines, 'zodiac:') || '전갈자리',
-      zodiac_reason: extractTextBlock(lines, 'zodiac_reason:') || '오늘은 과도한 집착이나 의심을 조심해야 합니다.',
-      animal: extractTextBlock(lines, 'animal:') || '뱀띠',
-      animal_reason: extractTextBlock(lines, 'animal_reason:') || '뱀띠의 교묘한 기운이 오늘 갈등을 일으킬 수 있습니다.'
+      persona_title: extractTextBlock(lines, 'persona_title:') || '차가운 관망자',
+      persona_interpretation: extractTextBlock(lines, 'persona_interpretation:') || '무심한 태도를 유지하지만, 사실은 상황을 세밀히 계산 중입니다.',
+      persona_message: extractTextBlock(lines, 'persona_message:') || '거리를 두는 태도가 때론 유리하지만, 한 번의 진심 어린 표현이 분위기를 바꿉니다.'
     };
   }
 }
