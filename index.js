@@ -358,12 +358,12 @@ function generatePersonaPrompt(data) {
 다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
-오늘의 밸런스: 일 70% 연애 20% 휴식 10%
+오늘의 밸런스: 일70% 연애20% 휴식10%
 밸런스 해석: 오늘은 집중력이 높은 날이니 업무에 몰입하되 인간관계도 소홀히 하지 마세요
 밸런스 주의사항: 과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요
 
 {
-  "persona_title": "일 XX% 연애 XX% 휴식 XX%",
+  "persona_title": "일XX% 연애XX% 휴식XX%",
   "persona_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
   "persona_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
 }`;
@@ -507,7 +507,7 @@ function parsePersonaResult(text) {
     
     // 텍스트 블록 추출으로 폴백
     return {
-      persona_title: extractTextBlock(lines, 'persona_title:') || '일 60% 연애 30% 휴식 10%',
+      persona_title: extractTextBlock(lines, 'persona_title:') || '일60% 연애30% 휴식10%',
       persona_interpretation: extractTextBlock(lines, 'persona_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
       persona_message: extractTextBlock(lines, 'persona_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
     };
