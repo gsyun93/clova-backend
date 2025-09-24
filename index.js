@@ -152,7 +152,7 @@ app.post('/generate-unconscious', async (req, res) => {
   }
 });
 
-// 페르소나 생성 API 엔드포인트
+// 밸런스 생성 API 엔드포인트
 app.post('/generate-persona', async (req, res) => {
   try {
     const { birthdate, birthtime, mbti, gender } = req.body;
@@ -162,10 +162,10 @@ app.post('/generate-persona', async (req, res) => {
       return res.status(400).json({ error: '생년월일이 필요합니다.' });
     }
 
-    // 페르소나 프롬프트 생성
+    // 밸런스 프롬프트 생성
     const prompt = generatePersonaPrompt({ birthdate, birthtime, mbti, gender });
     
-    console.log('페르소나 생성 시작:', { birthdate, birthtime, mbti, gender });
+    console.log('밸런스 생성 시작:', { birthdate, birthtime, mbti, gender });
     
     // OpenAI API 호출
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -194,23 +194,23 @@ app.post('/generate-persona', async (req, res) => {
       throw new Error('OpenAI 응답이 비어있습니다');
     }
 
-    console.log('페르소나 생성 성공');
-    console.log('=== AI가 생성한 페르소나 내용 ===');
+    console.log('밸런스 생성 성공');
+    console.log('=== AI가 생성한 밸런스 내용 ===');
     console.log(text);
     console.log('=== AI 응답 끝 ===');
     
-    // 페르소나 결과 파싱 및 반환
+    // 밸런스 결과 파싱 및 반환
     const personaResult = parsePersonaResult(text);
-    console.log('=== 파싱된 페르소나 결과 ===');
+    console.log('=== 파싱된 밸런스 결과 ===');
     console.log(personaResult);
     console.log('=== 파싱 결과 끝 ===');
     
     res.json(personaResult);
 
   } catch (error) {
-    console.error('페르소나 생성 오류:', error);
+    console.error('밸런스 생성 오류:', error);
     res.status(500).json({ 
-      error: '페르소나 생성 중 오류 발생',
+      error: '밸런스 생성 중 오류 발생',
       message: error.message 
     });
   }
@@ -322,7 +322,7 @@ function generateUnconsciousPrompt(data) {
 }`;
 }
 
-// 페르소나 프롬프트 생성 함수
+// 밸런스 프롬프트 생성 함수
 function generatePersonaPrompt(data) {
   const birthdate = data.birthdate;
   const year = parseInt(birthdate.substring(0, 4));
@@ -340,7 +340,12 @@ function generatePersonaPrompt(data) {
   }
 
   return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 사회에서 보여주는 페르소나(사회적 가면)의 모습을 구체적으로 분석해주세요.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 하루의 일상 밸런스를 분석해주세요.
+
+다음 3가지 영역에 대해 100%를 분배하여 오늘의 최적 밸런스를 제안해주세요:
+- 일 (업무, 공부, 목표 달성)
+- 연애 (인간관계, 소통, 사랑)
+- 휴식 (여가, 휴식, 자기계발)
 
 사용자 정보:
 - 성별: ${data.gender || '미입력'}
@@ -350,17 +355,17 @@ function generatePersonaPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
-오늘의 페르소나: 차가운 관망자 
-페르소나 해석: 무심한 태도를 유지하지만, 사실은 상황을 세밀히 계산 중이야
-오늘의 메시지: 거리를 두는 태도가 때론 유리하지만, 한 번의 진심 어린 표현이 분위기를 바꿔줄거야
+오늘의 밸런스: 일 70% 연애 20% 휴식 10%
+밸런스 해석: 오늘은 집중력이 높은 날이니 업무에 몰입하되 인간관계도 소홀히 하지 마세요
+밸런스 주의사항: 과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요
 
 {
-  "persona_title": "구체적인 페르소나 제목",
-  "persona_interpretation": "마침표 없이 구체적인 페르소나 해석 (50-60자)",
-  "persona_message": "마침표 없이 구체적인 오늘의 메시지 (50-60자)"
+  "persona_title": "일 XX% 연애 XX% 휴식 XX%",
+  "persona_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
+  "persona_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
 }`;
 }
 
@@ -502,9 +507,9 @@ function parsePersonaResult(text) {
     
     // 텍스트 블록 추출으로 폴백
     return {
-      persona_title: extractTextBlock(lines, 'persona_title:') || '차가운 관망자',
-      persona_interpretation: extractTextBlock(lines, 'persona_interpretation:') || '무심한 태도를 유지하지만, 사실은 상황을 세밀히 계산 중입니다.',
-      persona_message: extractTextBlock(lines, 'persona_message:') || '거리를 두는 태도가 때론 유리하지만, 한 번의 진심 어린 표현이 분위기를 바꿉니다.'
+      persona_title: extractTextBlock(lines, 'persona_title:') || '일 60% 연애 30% 휴식 10%',
+      persona_interpretation: extractTextBlock(lines, 'persona_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
+      persona_message: extractTextBlock(lines, 'persona_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
     };
   }
 }
