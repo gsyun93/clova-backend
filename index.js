@@ -153,7 +153,7 @@ app.post('/generate-unconscious', async (req, res) => {
 });
 
 // 밸런스 생성 API 엔드포인트
-app.post('/generate-persona', async (req, res) => {
+app.post('/generate-balance', async (req, res) => {
   try {
     const { birthdate, birthtime, mbti, gender } = req.body;
     
@@ -163,7 +163,7 @@ app.post('/generate-persona', async (req, res) => {
     }
 
     // 밸런스 프롬프트 생성
-    const prompt = generatePersonaPrompt({ birthdate, birthtime, mbti, gender });
+    const prompt = generateBalancePrompt({ birthdate, birthtime, mbti, gender });
     
     console.log('밸런스 생성 시작:', { birthdate, birthtime, mbti, gender });
     
@@ -200,12 +200,12 @@ app.post('/generate-persona', async (req, res) => {
     console.log('=== AI 응답 끝 ===');
     
     // 밸런스 결과 파싱 및 반환
-    const personaResult = parsePersonaResult(text);
+    const balanceResult = parseBalanceResult(text);
     console.log('=== 파싱된 밸런스 결과 ===');
-    console.log(personaResult);
+    console.log(balanceResult);
     console.log('=== 파싱 결과 끝 ===');
     
-    res.json(personaResult);
+    res.json(balanceResult);
 
   } catch (error) {
     console.error('밸런스 생성 오류:', error);
@@ -323,7 +323,7 @@ function generateUnconsciousPrompt(data) {
 }
 
 // 밸런스 프롬프트 생성 함수
-function generatePersonaPrompt(data) {
+function generateBalancePrompt(data) {
   const birthdate = data.birthdate;
   const year = parseInt(birthdate.substring(0, 4));
   const month = parseInt(birthdate.substring(4, 6));
@@ -363,9 +363,9 @@ function generatePersonaPrompt(data) {
 밸런스 주의사항: 과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요
 
 {
-  "persona_title": "일XX% 연애XX% 휴식XX%",
-  "persona_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
-  "persona_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
+  "balance_title": "일XX% 연애XX% 휴식XX%",
+  "balance_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
+  "balance_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
 }`;
 }
 
@@ -485,8 +485,8 @@ function parseUnconsciousResult(text) {
   }
 }
 
-// 페르소나 결과 파싱 함수
-function parsePersonaResult(text) {
+// 밸런스 결과 파싱 함수
+function parseBalanceResult(text) {
   const lines = text.split('\n').map(l => l.trim());
   
   // JSON 응답에서 직접 파싱 시도
@@ -507,9 +507,9 @@ function parsePersonaResult(text) {
     
     // 텍스트 블록 추출으로 폴백
     return {
-      persona_title: extractTextBlock(lines, 'persona_title:') || '일60% 연애30% 휴식10%',
-      persona_interpretation: extractTextBlock(lines, 'persona_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
-      persona_message: extractTextBlock(lines, 'persona_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
+      balance_title: extractTextBlock(lines, 'balance_title:') || '일60% 연애30% 휴식10%',
+      balance_interpretation: extractTextBlock(lines, 'balance_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
+      balance_message: extractTextBlock(lines, 'balance_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
     };
   }
 }
