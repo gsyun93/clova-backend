@@ -886,7 +886,7 @@ app.get('/api/statistics', async (req, res) => {
     });
 
     // OCR 이탈률 계산 (데일리)
-    // AI 컨텐츠 선택 횟수 (운세, 조력자, 방해꾼) - 오늘만
+    // AI 컨텐츠 선택 횟수 (운세, 무의식, 밸런스) - 오늘만
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
@@ -895,7 +895,7 @@ app.get('/api/statistics', async (req, res) => {
     const todayAiContentSelections = data.filter(item => {
       const itemDate = new Date(item.created_at);
       return itemDate >= new Date(todayStart) && itemDate < new Date(todayEnd) &&
-             ['운세', '조력자', '방해꾼'].includes(item.selected_service);
+             ['운세', '무의식', '밸런스'].includes(item.selected_service);
     }).length;
     
     // 오늘 OCR 이탈 횟수 조회
