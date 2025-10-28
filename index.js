@@ -1137,6 +1137,12 @@ app.get('/api/statistics', async (req, res) => {
     // 교차 분석 (최근 한달 데이터만)
     const detailedCrossAnalysis = calculateCrossAnalysis(recentMonthData);
     
+    // 최근 한달 서비스 통계
+    const recentMonthServiceStats = {};
+    recentMonthData.forEach(item => {
+      recentMonthServiceStats[item.selected_service] = (recentMonthServiceStats[item.selected_service] || 0) + 1;
+    });
+    
     res.json({
       success: true,
       total_users: totalUsers,
