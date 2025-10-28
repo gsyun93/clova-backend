@@ -877,15 +877,17 @@ function calculateMBTIServiceRanking(data) {
 // 성별 × 연령 × 서비스 교차 분석
 function calculateCrossAnalysis(data) {
   const result = {
-    '여성': { '20대': {}, '30대': {}, '40대': {} },
-    '남성': { '20대': {}, '30대': {}, '40대': {} }
+    '여성': { '10대': {}, '20대': {}, '30대': {}, '40대': {}, '50대+': {} },
+    '남성': { '10대': {}, '20대': {}, '30대': {}, '40대': {}, '50대+': {} }
   };
   
   data.forEach(item => {
     const age = calculateAge(item.birth_date);
-    let ageGroup = '40대';
-    if (age < 30) ageGroup = '20대';
+    let ageGroup = '50대+';
+    if (age < 20) ageGroup = '10대';
+    else if (age < 30) ageGroup = '20대';
     else if (age < 40) ageGroup = '30대';
+    else if (age < 50) ageGroup = '40대';
     
     const gender = item.gender;
     const service = item.selected_service;
@@ -1118,9 +1120,11 @@ app.get('/api/statistics', async (req, res) => {
     const ageDetailedStats = {};
     recentMonthData.forEach(item => {
       const age = calculateAge(item.birth_date);
-      let ageGroup = '40대';
-      if (age < 30) ageGroup = '20대';
+      let ageGroup = '50대+';
+      if (age < 20) ageGroup = '10대';
+      else if (age < 30) ageGroup = '20대';
       else if (age < 40) ageGroup = '30대';
+      else if (age < 50) ageGroup = '40대';
       
       if (!ageDetailedStats[ageGroup]) {
         ageDetailedStats[ageGroup] = { 운세: 0, 무의식: 0, 밸런스: 0 };
