@@ -542,30 +542,6 @@ function extractTextBlock(lines, label) {
   return text;
 }
 
-// 기간별 통계 계산 함수
-function calculatePeriodStats(data, startDate, endDate) {
-  return data.filter(item => {
-    const itemDate = new Date(item.created_at);
-    return itemDate >= new Date(startDate) && itemDate < new Date(endDate);
-  });
-}
-
-// KST 변환 함수
-function toKST(date) {
-  const kst = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-  return kst;
-}
-
-// 시간대 분류 함수
-function categorizeTimeSlot(timeSlot) {
-  const hour = parseInt(timeSlot.split(':')[0]);
-  if (hour >= 6 && hour < 10) return '06~10시';
-  if (hour >= 10 && hour < 14) return '10~14시';
-  if (hour >= 14 && hour < 18) return '14~18시';
-  if (hour >= 18 && hour < 23) return '18~23시';
-  return '기타';
-}
-
 // 띠 계산 함수
 function calculateZodiac(year) {
   const zodiacSigns = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
@@ -947,55 +923,63 @@ app.get('/api/statistics', async (req, res) => {
       todayOcrDropouts,
       ocrDropoutRate: ocrDropoutRate + '%'
     });
-
-    // 기간별 통계 계산
-    // 이번주 시작일 (월요일)
-    const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(today.getDate() - today.getDay() + 1);
-    thisWeekStart.setHours(0, 0, 0, 0);
     
-    // 지난주 시작일
-    const lastWeekStart = new Date(thisWeekStart);
-    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
-    
-    // 지난주 종료일
-    const lastWeekEnd = new Date(thisWeekStart);
-    
-    // 최근 한달 시작일
+    // 최근 한달 데이터 필터링
     const recentMonthStart = new Date(today);
-    recentMonthStart.setMonth(today.getMonth() - 1);
-    recentMonthStart.setHours(0, 0, 0, 0);
+    recentMonthStart.setDate(recentMonthStart.getDate() - 30);
+    const recentMonthStartISO = recentMonthStart.toISOString();
     
-    // 이전 한달 시작일
-    const previousMonthStart = new Date(recentMonthStart);
-    previousMonthStart.setMonth(recentMonthStart.getMonth() - 1);
-    
-    const todayData = calculatePeriodStats(data, todayStart, todayEnd);
-    const thisWeekData = calculatePeriodStats(data, thisWeekStart.toISOString(), todayEnd);
-    const lastWeekData = calculatePeriodStats(data, lastWeekStart.toISOString(), lastWeekEnd.toISOString());
-    const recentMonthData = calculatePeriodStats(data, recentMonthStart.toISOString(), todayEnd);
-    const previousMonthData = calculatePeriodStats(data, previousMonthStart.toISOString(), recentMonthStart.toISOString());
+    const recentMonthData = data.filter(item => {
+      const itemDate = new Date(item.created_at);
+      return itemDate >= recentMonthStart && itemDate < new Date(todayEnd);
+    });
     
     // 최근 한달 MBTI별 서비스 통계
-    const recentMonthMbtiServiceStats = {};
+    const mbtiServiceStats = {};
     recentMonthData.forEach(item => {
       if (item.mbti) {
-        if (!recentMonthMbtiServiceStats[item.mbti]) {
-          recentMonthMbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+        if (!mbtiServiceStats[item.mbti]) {
+          mbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
         }
-        if (recentMonthMbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
-          recentMonthMbtiServiceStats[item.mbti][item.selected_service]++;
+        if (mbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
+          mbtiServiceStats[item.mbti][item.selected_service]++;
         }
       }
     });
     
     // 최근 한달 서비스별 이탈률 계산
-    const recentMonthServiceDropoutRates = {};
+    const recentMonthOcrDropouts = {};
+    try {
+      const { data: dropoutData, error: dropoutError } = await supabase
+        .from('ocr_dropouts')
+        .select('*')
+        .gte('created_at', recentMonthStartISO)
+        .lt('created_at', todayEnd);
+      
+      if (!dropoutError && dropoutData) {
+        // 임시로 균등 분배 (실제로는 서비스별 이탈 데이터 필요)
+        const totalDropouts = dropoutData.length;
+        const avgDropout = Math.floor(totalDropouts / 3);
+        recentMonthOcrDropouts['운세'] = avgDropout;
+        recentMonthOcrDropouts['무의식'] = avgDropout;
+        recentMonthOcrDropouts['밸런스'] = totalDropouts - (avgDropout * 2);
+      }
+    } catch (dropoutErr) {
+      console.error('최근 한달 OCR 이탈 데이터 조회 오류:', dropoutErr);
+    }
+    
+    // 서비스별 이탈률 계산 (최근 한달)
+    const conversionRates = {};
     ['운세', '무의식', '밸런스'].forEach(service => {
-      const serviceUsers = recentMonthData.filter(item => item.selected_service === service).length;
-      // 임시로 각 서비스별 이탈률을 다르게 설정 (실제로는 OCR 이탈 데이터 기반으로 계산해야 함)
-      const dropoutRates = { 운세: 28, 무의식: 29, 밸런스: 25 };
-      recentMonthServiceDropoutRates[service] = dropoutRates[service];
+      const serviceCount = recentMonthData.filter(item => item.selected_service === service).length;
+      const serviceDropouts = recentMonthOcrDropouts[service] || 0;
+      if (serviceCount > 0) {
+        // 전환율 = ((서비스 이용 - 이탈) / 서비스 이용) * 100
+        const conversionRate = Math.round(((serviceCount - serviceDropouts) / serviceCount) * 100);
+        conversionRates[service] = Math.max(0, Math.min(100, conversionRate));
+      } else {
+        conversionRates[service] = 0;
+      }
     });
 
     res.json({
@@ -1009,8 +993,8 @@ app.get('/api/statistics', async (req, res) => {
       weekday_stats: weekdayStats,
       ocr_dropout_rate: ocrDropoutRate,
       ocr_dropout_count: todayOcrDropouts,
-      recent_month_mbti_service_stats: recentMonthMbtiServiceStats,
-      recent_month_service_dropout_rates: recentMonthServiceDropoutRates,
+      mbti_service_stats: mbtiServiceStats,
+      conversion_rates: conversionRates,
       raw_data: data
     });
 
