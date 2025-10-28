@@ -949,10 +949,6 @@ app.get('/api/statistics', async (req, res) => {
     });
 
     // 기간별 통계 계산
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
-    
     // 이번주 시작일 (월요일)
     const thisWeekStart = new Date(today);
     thisWeekStart.setDate(today.getDate() - today.getDay() + 1);
