@@ -1167,6 +1167,7 @@ app.get('/api/statistics', async (req, res) => {
         밸런스: 75
       },
       mbti_service_stats: mbtiServiceStats,
+      recent_month_service_stats: recentMonthServiceStats,
       age_detailed_stats: ageDetailedStats,
       detailed_cross_analysis: detailedCrossAnalysis,
       ocr_dropout_rate: ocrDropoutRate,
