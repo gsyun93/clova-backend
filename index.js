@@ -923,64 +923,6 @@ app.get('/api/statistics', async (req, res) => {
       todayOcrDropouts,
       ocrDropoutRate: ocrDropoutRate + '%'
     });
-    
-    // 최근 한달 데이터 필터링
-    const recentMonthStart = new Date(today);
-    recentMonthStart.setDate(recentMonthStart.getDate() - 30);
-    const recentMonthStartISO = recentMonthStart.toISOString();
-    
-    const recentMonthData = data.filter(item => {
-      const itemDate = new Date(item.created_at);
-      return itemDate >= recentMonthStart && itemDate < new Date(todayEnd);
-    });
-    
-    // 최근 한달 MBTI별 서비스 통계
-    const mbtiServiceStats = {};
-    recentMonthData.forEach(item => {
-      if (item.mbti) {
-        if (!mbtiServiceStats[item.mbti]) {
-          mbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
-        }
-        if (mbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
-          mbtiServiceStats[item.mbti][item.selected_service]++;
-        }
-      }
-    });
-    
-    // 최근 한달 서비스별 이탈률 계산
-    const recentMonthOcrDropouts = {};
-    try {
-      const { data: dropoutData, error: dropoutError } = await supabase
-        .from('ocr_dropouts')
-        .select('*')
-        .gte('created_at', recentMonthStartISO)
-        .lt('created_at', todayEnd);
-      
-      if (!dropoutError && dropoutData) {
-        // 임시로 균등 분배 (실제로는 서비스별 이탈 데이터 필요)
-        const totalDropouts = dropoutData.length;
-        const avgDropout = Math.floor(totalDropouts / 3);
-        recentMonthOcrDropouts['운세'] = avgDropout;
-        recentMonthOcrDropouts['무의식'] = avgDropout;
-        recentMonthOcrDropouts['밸런스'] = totalDropouts - (avgDropout * 2);
-      }
-    } catch (dropoutErr) {
-      console.error('최근 한달 OCR 이탈 데이터 조회 오류:', dropoutErr);
-    }
-    
-    // 서비스별 이탈률 계산 (최근 한달)
-    const conversionRates = {};
-    ['운세', '무의식', '밸런스'].forEach(service => {
-      const serviceCount = recentMonthData.filter(item => item.selected_service === service).length;
-      const serviceDropouts = recentMonthOcrDropouts[service] || 0;
-      if (serviceCount > 0) {
-        // 전환율 = ((서비스 이용 - 이탈) / 서비스 이용) * 100
-        const conversionRate = Math.round(((serviceCount - serviceDropouts) / serviceCount) * 100);
-        conversionRates[service] = Math.max(0, Math.min(100, conversionRate));
-      } else {
-        conversionRates[service] = 0;
-      }
-    });
 
     res.json({
       success: true,
@@ -993,8 +935,6 @@ app.get('/api/statistics', async (req, res) => {
       weekday_stats: weekdayStats,
       ocr_dropout_rate: ocrDropoutRate,
       ocr_dropout_count: todayOcrDropouts,
-      mbti_service_stats: mbtiServiceStats,
-      conversion_rates: conversionRates,
       raw_data: data
     });
 
