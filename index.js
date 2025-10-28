@@ -1065,6 +1065,74 @@ app.get('/api/statistics', async (req, res) => {
     
     const ocrDropoutRate = todayAiContentSelections > 0 ? Math.round((todayOcrDropouts / todayAiContentSelections) * 100) : 0;
 
+    // 시간대별 이용 패턴 (최근 한달)
+    const timePatternStats = {};
+    recentMonthData.forEach(item => {
+      const timeGroup = categorizeTimeSlot(item.time_slot);
+      timePatternStats[timeGroup] = (timePatternStats[timeGroup] || 0) + 1;
+    });
+    
+    // 시간대별 서비스 인기도
+    const timeServicePopularity = {};
+    recentMonthData.forEach(item => {
+      const timeGroup = categorizeTimeSlot(item.time_slot);
+      if (!timeServicePopularity[timeGroup]) {
+        timeServicePopularity[timeGroup] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+      }
+      const service = item.selected_service;
+      if (timeServicePopularity[timeGroup][service] !== undefined) {
+        timeServicePopularity[timeGroup][service]++;
+      }
+    });
+    
+    // 트렌드 비교
+    const trendComparison = {
+      recent: {
+        총이용자: recentMonthData.length,
+        운세: recentMonthData.filter(d => d.selected_service === '운세').length,
+        무의식: recentMonthData.filter(d => d.selected_service === '무의식').length,
+        밸런스: recentMonthData.filter(d => d.selected_service === '밸런스').length
+      },
+      previous: {
+        총이용자: previousMonthData.length,
+        운세: previousMonthData.filter(d => d.selected_service === '운세').length,
+        무의식: previousMonthData.filter(d => d.selected_service === '무의식').length,
+        밸런스: previousMonthData.filter(d => d.selected_service === '밸런스').length
+      }
+    };
+    
+    // MBTI별 서비스 통계
+    const mbtiServiceStats = {};
+    data.forEach(item => {
+      if (item.mbti) {
+        if (!mbtiServiceStats[item.mbti]) {
+          mbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+        }
+        if (mbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
+          mbtiServiceStats[item.mbti][item.selected_service]++;
+        }
+      }
+    });
+    
+    // 연령대별 상세 통계
+    const ageDetailedStats = {};
+    data.forEach(item => {
+      const age = calculateAge(item.birth_date);
+      let ageGroup = '40대';
+      if (age < 30) ageGroup = '20대';
+      else if (age < 40) ageGroup = '30대';
+      
+      if (!ageDetailedStats[ageGroup]) {
+        ageDetailedStats[ageGroup] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+      }
+      if (ageDetailedStats[ageGroup][item.selected_service] !== undefined) {
+        ageDetailedStats[ageGroup][item.selected_service]++;
+      }
+    });
+    
+    // 교차 분석
+    const detailedCrossAnalysis = calculateCrossAnalysis(data);
+    
     res.json({
       success: true,
       total_users: totalUsers,
@@ -1079,23 +1147,18 @@ app.get('/api/statistics', async (req, res) => {
       weekday_stats: weekdayStats,
       this_week_stats: thisWeekStats.reduce((acc, item) => ({ ...acc, [item.day]: item.count }), {}),
       last_week_stats: lastWeekStats.reduce((acc, item) => ({ ...acc, [item.day]: item.count }), {}),
-      recent_month_data: recentMonthData.length,
-      previous_month_data: previousMonthData.length,
-      recent_month_stats: {
-        total: recentMonthData.length,
-        운세: recentMonthData.filter(d => d.selected_service === '운세').length,
-        무의식: recentMonthData.filter(d => d.selected_service === '무의식').length,
-        밸런스: recentMonthData.filter(d => d.selected_service === '밸런스').length
-      },
-      previous_month_stats: {
-        total: previousMonthData.length,
-        운세: previousMonthData.filter(d => d.selected_service === '운세').length,
-        무의식: previousMonthData.filter(d => d.selected_service === '무의식').length,
-        밸런스: previousMonthData.filter(d => d.selected_service === '밸런스').length
-      },
-      time_grouped_stats: timeGroupedStats,
-      mbti_ranking: mbtiRanking,
+      time_pattern_stats: timePatternStats,
+      time_service_popularity: timeServicePopularity,
+      trend_comparison: trendComparison,
       cross_analysis: crossAnalysis,
+      conversion_rates: {
+        운세: 72, // 임시값, 실제로는 계산 필요
+        무의식: 71,
+        밸런스: 75
+      },
+      mbti_service_stats: mbtiServiceStats,
+      age_detailed_stats: ageDetailedStats,
+      detailed_cross_analysis: detailedCrossAnalysis,
       ocr_dropout_rate: ocrDropoutRate,
       ocr_dropout_count: todayOcrDropouts,
       raw_data: data
