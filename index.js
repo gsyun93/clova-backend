@@ -542,6 +542,30 @@ function extractTextBlock(lines, label) {
   return text;
 }
 
+// 기간별 통계 계산 함수
+function calculatePeriodStats(data, startDate, endDate) {
+  return data.filter(item => {
+    const itemDate = new Date(item.created_at);
+    return itemDate >= new Date(startDate) && itemDate < new Date(endDate);
+  });
+}
+
+// KST 변환 함수
+function toKST(date) {
+  const kst = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+  return kst;
+}
+
+// 시간대 분류 함수
+function categorizeTimeSlot(timeSlot) {
+  const hour = parseInt(timeSlot.split(':')[0]);
+  if (hour >= 6 && hour < 10) return '06~10시';
+  if (hour >= 10 && hour < 14) return '10~14시';
+  if (hour >= 14 && hour < 18) return '14~18시';
+  if (hour >= 18 && hour < 23) return '18~23시';
+  return '기타';
+}
+
 // 띠 계산 함수
 function calculateZodiac(year) {
   const zodiacSigns = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
@@ -925,11 +949,36 @@ app.get('/api/statistics', async (req, res) => {
     });
 
     // 기간별 통계 계산
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    
+    // 이번주 시작일 (월요일)
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay() + 1);
+    thisWeekStart.setHours(0, 0, 0, 0);
+    
+    // 지난주 시작일
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    
+    // 지난주 종료일
+    const lastWeekEnd = new Date(thisWeekStart);
+    
+    // 최근 한달 시작일
+    const recentMonthStart = new Date(today);
+    recentMonthStart.setMonth(today.getMonth() - 1);
+    recentMonthStart.setHours(0, 0, 0, 0);
+    
+    // 이전 한달 시작일
+    const previousMonthStart = new Date(recentMonthStart);
+    previousMonthStart.setMonth(recentMonthStart.getMonth() - 1);
+    
     const todayData = calculatePeriodStats(data, todayStart, todayEnd);
-    const thisWeekData = calculatePeriodStats(data, thisWeekStart, todayEnd);
-    const lastWeekData = calculatePeriodStats(data, lastWeekStart, lastWeekEnd);
-    const recentMonthData = calculatePeriodStats(data, recentMonthStart, todayEnd);
-    const previousMonthData = calculatePeriodStats(data, previousMonthStart, recentMonthStart);
+    const thisWeekData = calculatePeriodStats(data, thisWeekStart.toISOString(), todayEnd);
+    const lastWeekData = calculatePeriodStats(data, lastWeekStart.toISOString(), lastWeekEnd.toISOString());
+    const recentMonthData = calculatePeriodStats(data, recentMonthStart.toISOString(), todayEnd);
+    const previousMonthData = calculatePeriodStats(data, previousMonthStart.toISOString(), recentMonthStart.toISOString());
     
     // 최근 한달 MBTI별 서비스 통계
     const recentMonthMbtiServiceStats = {};
