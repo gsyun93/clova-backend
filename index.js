@@ -1114,9 +1114,9 @@ app.get('/api/statistics', async (req, res) => {
       }
     });
     
-    // 연령대별 상세 통계
+    // 연령대별 상세 통계 (최근 한달 데이터만)
     const ageDetailedStats = {};
-    data.forEach(item => {
+    recentMonthData.forEach(item => {
       const age = calculateAge(item.birth_date);
       let ageGroup = '40대';
       if (age < 30) ageGroup = '20대';
@@ -1130,8 +1130,8 @@ app.get('/api/statistics', async (req, res) => {
       }
     });
     
-    // 교차 분석
-    const detailedCrossAnalysis = calculateCrossAnalysis(data);
+    // 교차 분석 (최근 한달 데이터만)
+    const detailedCrossAnalysis = calculateCrossAnalysis(recentMonthData);
     
     res.json({
       success: true,
