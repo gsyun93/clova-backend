@@ -806,6 +806,106 @@ app.post('/api/statistics', async (req, res) => {
   }
 });
 
+// KST 변환 함수
+function toKST(date) {
+  const kstOffset = 9 * 60 * 60 * 1000; // KST는 UTC+9
+  const utc = date.getTime() + (date.getTimezoneOffset() * 60 * 1000);
+  return new Date(utc + kstOffset);
+}
+
+// 한국 시간 기준 날짜 가져오기
+function getKSTDate() {
+  return toKST(new Date());
+}
+
+// 시간대 재분류 함수 (06~10시, 10~14시, 14~18시, 18~23시)
+function categorizeTimeSlot(timeSlot) {
+  if (!timeSlot) return '기타';
+  
+  // "10~11시" 형식에서 시작 시간 추출
+  const match = timeSlot.match(/(\d+)~/);
+  if (!match) return '기타';
+  
+  const startHour = parseInt(match[1]);
+  
+  if (startHour >= 6 && startHour < 10) return '06~10시';
+  if (startHour >= 10 && startHour < 14) return '10~14시';
+  if (startHour >= 14 && startHour < 18) return '14~18시';
+  if (startHour >= 18 && startHour < 23) return '18~23시';
+  if (startHour >= 23 || startHour < 6) return '23~06시'; // 심야시간
+  return '기타';
+}
+
+// 기간별 통계 계산 함수
+function calculatePeriodStats(data, startDate, endDate) {
+  return data.filter(item => {
+    const itemDate = toKST(new Date(item.created_at));
+    return itemDate >= startDate && itemDate < endDate;
+  });
+}
+
+// MBTI별 서비스 선호도 계산 (합계 순위)
+function calculateMBTIServiceRanking(data) {
+  const ranking = {};
+  
+  data.forEach(item => {
+    if (!item.mbti) return;
+    
+    if (!ranking[item.mbti]) {
+      ranking[item.mbti] = {
+        운세: 0,
+        무의식: 0,
+        밸런스: 0,
+        합계: 0
+      };
+    }
+    
+    const service = item.selected_service;
+    if (service === '운세' || service === '무의식' || service === '밸런스') {
+      ranking[item.mbti][service]++;
+      ranking[item.mbti].합계++;
+    }
+  });
+  
+  // 합계 기준 정렬, 상위 10개만
+  return Object.entries(ranking)
+    .map(([mbti, stats]) => ({ mbti, ...stats }))
+    .sort((a, b) => b.합계 - a.합계)
+    .slice(0, 10);
+}
+
+// 성별 × 연령 × 서비스 교차 분석
+function calculateCrossAnalysis(data) {
+  const result = {
+    '여성': { '20대': {}, '30대': {}, '40대': {} },
+    '남성': { '20대': {}, '30대': {}, '40대': {} }
+  };
+  
+  data.forEach(item => {
+    const age = calculateAge(item.birth_date);
+    let ageGroup = '40대';
+    if (age < 30) ageGroup = '20대';
+    else if (age < 40) ageGroup = '30대';
+    
+    const gender = item.gender;
+    const service = item.selected_service;
+    
+    if (!result[gender] || !result[gender][ageGroup]) return;
+    if (!result[gender][ageGroup][service]) {
+      result[gender][ageGroup][service] = 0;
+    }
+    result[gender][ageGroup][service]++;
+  });
+  
+  return result;
+}
+
+function calculateAge(birthDate) {
+  const birthYear = new Date(birthDate).getFullYear();
+  const currentYear = new Date().getFullYear();
+  return currentYear - birthYear;
+}
+
 // 통계 데이터 조회
 app.get('/api/statistics', async (req, res) => {
   try {
@@ -885,54 +985,117 @@ app.get('/api/statistics', async (req, res) => {
       weekdayStats[item.weekday] = (weekdayStats[item.weekday] || 0) + 1;
     });
 
-    // OCR 이탈률 계산 (데일리)
-    // AI 컨텐츠 선택 횟수 (운세, 무의식, 밸런스) - 오늘만
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    // 한국 시간 기준 날짜 계산
+    const nowKST = getKSTDate();
+    const todayStart = new Date(nowKST.getFullYear(), nowKST.getMonth(), nowKST.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
     
-    // 오늘 AI 컨텐츠 선택 횟수 계산
-    const todayAiContentSelections = data.filter(item => {
-      const itemDate = new Date(item.created_at);
-      return itemDate >= new Date(todayStart) && itemDate < new Date(todayEnd) &&
-             ['운세', '무의식', '밸런스'].includes(item.selected_service);
-    }).length;
+    // 이번주/지난주 계산
+    const thisWeekStart = new Date(todayStart);
+    thisWeekStart.setDate(thisWeekStart.getDate() - nowKST.getDay()); // 이번주 월요일
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(thisWeekStart);
     
-    // 오늘 OCR 이탈 횟수 조회
+    // 최근 한달/이전 한달 계산
+    const recentMonthStart = new Date(todayStart);
+    recentMonthStart.setMonth(recentMonthStart.getMonth() - 1);
+    const previousMonthStart = new Date(recentMonthStart);
+    previousMonthStart.setMonth(previousMonthStart.getMonth() - 1);
+    
+    // 기간별 통계 계산
+    const todayData = calculatePeriodStats(data, todayStart, todayEnd);
+    const thisWeekData = calculatePeriodStats(data, thisWeekStart, todayEnd);
+    const lastWeekData = calculatePeriodStats(data, lastWeekStart, lastWeekEnd);
+    const recentMonthData = calculatePeriodStats(data, recentMonthStart, todayEnd);
+    const previousMonthData = calculatePeriodStats(data, previousMonthStart, recentMonthStart);
+    
+    // 이번주/지난주 요일별 통계
+    const thisWeekStats = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'].map(day => {
+      const dayData = thisWeekData.filter(item => item.weekday === day);
+      return { day, count: dayData.length };
+    });
+    
+    const lastWeekStats = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'].map(day => {
+      const dayData = lastWeekData.filter(item => item.weekday === day);
+      return { day, count: dayData.length };
+    });
+    
+    // 시간대별 서비스 인기도 (재분류)
+    const timeGroupedStats = {};
+    data.forEach(item => {
+      const timeGroup = categorizeTimeSlot(item.time_slot);
+      if (!timeGroupedStats[timeGroup]) {
+        timeGroupedStats[timeGroup] = { 운세: 0, 무의식: 0, 밸런스: 0, 합계: 0 };
+      }
+      const service = item.selected_service;
+      if (service === '운세' || service === '무의식' || service === '밸런스') {
+        timeGroupedStats[timeGroup][service]++;
+        timeGroupedStats[timeGroup].합계++;
+      }
+    });
+    
+    // MBTI별 서비스 순위
+    const mbtiRanking = calculateMBTIServiceRanking(data);
+    
+    // 교차 분석
+    const crossAnalysis = calculateCrossAnalysis(data);
+    
+    // OCR 이탈률 계산
+    const todayAiContentSelections = todayData.filter(item => 
+      ['운세', '무의식', '밸런스'].includes(item.selected_service)
+    ).length;
+    
     let todayOcrDropouts = 0;
     try {
       const { data: dropoutData, error: dropoutError } = await supabase
         .from('ocr_dropouts')
-        .select('*')
-        .gte('created_at', todayStart)
-        .lt('created_at', todayEnd);
+        .select('*');
       
       if (!dropoutError && dropoutData) {
-        todayOcrDropouts = dropoutData.length;
-        console.log('오늘 OCR 이탈 데이터:', todayOcrDropouts, '건');
+        todayOcrDropouts = dropoutData.filter(item => {
+          const itemDate = toKST(new Date(item.created_at));
+          return itemDate >= todayStart && itemDate < todayEnd;
+        }).length;
       }
     } catch (dropoutErr) {
       console.error('OCR 이탈 데이터 조회 오류:', dropoutErr);
     }
     
-    // OCR 이탈률 계산 (퍼센트) - 오늘만
     const ocrDropoutRate = todayAiContentSelections > 0 ? Math.round((todayOcrDropouts / todayAiContentSelections) * 100) : 0;
-    
-    console.log('데일리 OCR 이탈률 계산:', {
-      todayAiContentSelections,
-      todayOcrDropouts,
-      ocrDropoutRate: ocrDropoutRate + '%'
-    });
 
     res.json({
       success: true,
       total_users: totalUsers,
+      today_users: todayData.length,
+      week_users: thisWeekData.length,
+      month_users: recentMonthData.length,
       gender_stats: genderStats,
       age_stats: ageStats,
       mbti_stats: mbtiStats,
       service_stats: serviceStats,
       time_stats: timeStats,
       weekday_stats: weekdayStats,
+      this_week_stats: thisWeekStats.reduce((acc, item) => ({ ...acc, [item.day]: item.count }), {}),
+      last_week_stats: lastWeekStats.reduce((acc, item) => ({ ...acc, [item.day]: item.count }), {}),
+      recent_month_data: recentMonthData.length,
+      previous_month_data: previousMonthData.length,
+      recent_month_stats: {
+        total: recentMonthData.length,
+        운세: recentMonthData.filter(d => d.selected_service === '운세').length,
+        무의식: recentMonthData.filter(d => d.selected_service === '무의식').length,
+        밸런스: recentMonthData.filter(d => d.selected_service === '밸런스').length
+      },
+      previous_month_stats: {
+        total: previousMonthData.length,
+        운세: previousMonthData.filter(d => d.selected_service === '운세').length,
+        무의식: previousMonthData.filter(d => d.selected_service === '무의식').length,
+        밸런스: previousMonthData.filter(d => d.selected_service === '밸런스').length
+      },
+      time_grouped_stats: timeGroupedStats,
+      mbti_ranking: mbtiRanking,
+      cross_analysis: crossAnalysis,
       ocr_dropout_rate: ocrDropoutRate,
       ocr_dropout_count: todayOcrDropouts,
       raw_data: data
