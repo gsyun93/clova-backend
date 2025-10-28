@@ -1134,6 +1134,19 @@ app.get('/api/statistics', async (req, res) => {
       }
     });
     
+    // 최근 한달 MBTI별 서비스 통계
+    const recentMonthMbtiServiceStats = {};
+    recentMonthData.forEach(item => {
+      if (item.mbti) {
+        if (!recentMonthMbtiServiceStats[item.mbti]) {
+          recentMonthMbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+        }
+        if (recentMonthMbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
+          recentMonthMbtiServiceStats[item.mbti][item.selected_service]++;
+        }
+      }
+    });
+    
     // 교차 분석 (최근 한달 데이터만)
     const detailedCrossAnalysis = calculateCrossAnalysis(recentMonthData);
     
@@ -1142,6 +1155,13 @@ app.get('/api/statistics', async (req, res) => {
     recentMonthData.forEach(item => {
       recentMonthServiceStats[item.selected_service] = (recentMonthServiceStats[item.selected_service] || 0) + 1;
     });
+    
+    // 최근 한달 이탈률 계산 (실제 이탈률이 아닌 임시값을 사용)
+    const recentMonthConversionRates = {
+      운세: 75,
+      무의식: 72,
+      밸런스: 73
+    };
     
     res.json({
       success: true,
@@ -1166,7 +1186,9 @@ app.get('/api/statistics', async (req, res) => {
         무의식: 71,
         밸런스: 75
       },
+      recent_month_conversion_rates: recentMonthConversionRates,
       mbti_service_stats: mbtiServiceStats,
+      recent_month_mbti_service_stats: recentMonthMbtiServiceStats,
       recent_month_service_stats: recentMonthServiceStats,
       age_detailed_stats: ageDetailedStats,
       detailed_cross_analysis: detailedCrossAnalysis,
