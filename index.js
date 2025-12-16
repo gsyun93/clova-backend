@@ -152,6 +152,198 @@ app.post('/generate-unconscious', async (req, res) => {
   }
 });
 
+// 후회 방지 서비스 생성 API 엔드포인트
+app.post('/generate-regret-prevention', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 후회 방지 프롬프트 생성
+    const prompt = generateRegretPreventionPrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('후회 방지 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('후회 방지 생성 성공');
+    console.log('=== AI가 생성한 후회 방지 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
+    
+    // 후회 방지 결과 파싱 및 반환
+    const regretResult = parseRegretPreventionResult(text);
+    console.log('=== 파싱된 후회 방지 결과 ===');
+    console.log(regretResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
+    res.json(regretResult);
+
+  } catch (error) {
+    console.error('후회 방지 생성 오류:', error);
+    res.status(500).json({ 
+      error: '후회 방지 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 조력자 알아보기 생성 API 엔드포인트
+app.post('/generate-helper-person', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 조력자 프롬프트 생성
+    const prompt = generateHelperPersonPrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('조력자 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('조력자 생성 성공');
+    console.log('=== AI가 생성한 조력자 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
+    
+    // 조력자 결과 파싱 및 반환
+    const helperResult = parseHelperPersonResult(text);
+    console.log('=== 파싱된 조력자 결과 ===');
+    console.log(helperResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
+    res.json(helperResult);
+
+  } catch (error) {
+    console.error('조력자 생성 오류:', error);
+    res.status(500).json({ 
+      error: '조력자 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
+// 방해꾼 알아보기 생성 API 엔드포인트
+app.post('/generate-hindrance-person', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 방해꾼 프롬프트 생성
+    const prompt = generateHindrancePersonPrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('방해꾼 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('방해꾼 생성 성공');
+    console.log('=== AI가 생성한 방해꾼 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
+    
+    // 방해꾼 결과 파싱 및 반환
+    const hindranceResult = parseHindrancePersonResult(text);
+    console.log('=== 파싱된 방해꾼 결과 ===');
+    console.log(hindranceResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
+    res.json(hindranceResult);
+
+  } catch (error) {
+    console.error('방해꾼 생성 오류:', error);
+    res.status(500).json({ 
+      error: '방해꾼 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
 // 밸런스 생성 API 엔드포인트
 app.post('/generate-balance', async (req, res) => {
   try {
@@ -319,6 +511,132 @@ function generateUnconsciousPrompt(data) {
   "unconscious_title": "구체적인 무의식 제목",
   "unconscious_interpretation": "마침표 없이 구체적인 무의식 해석 (50-60자)",
   "unconscious_message": "마침표 없이 구체적인 오늘의 메시지 (50-60자)"
+}`;
+}
+
+// 후회 방지 프롬프트 생성 함수
+function generateRegretPreventionPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 후회할 수 있는 일을 구체적으로 예측하고 그에 대한 해결책을 제시해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 후회 위험: 성급한 결정
+후회 원인 분석: 오늘은 충동적으로 중요한 결정을 내릴 위험이 있어, 한 번 더 생각해야 해
+후회 방지 조언: 후회하지 않으려면 오후 3시 이후에 결정을 내리면 더 나은 결과를 얻을 수 있을 거야
+
+{
+  "regret_title": "구체적인 후회 위험 제목",
+  "regret_interpretation": "마침표 없이 구체적인 후회 원인 분석 (50-60자)",
+  "regret_message": "마침표 없이 구체적인 후회 방지 조언 (50-60자)"
+}`;
+}
+
+// 조력자 알아보기 프롬프트 생성 함수
+function generateHelperPersonPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그에게 도움이 될 조력자(사람, 상황, 에너지)를 구체적으로 분석해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 조력자: 따뜻한 조언자
+조력자 해석: 오늘은 주변에서 조언을 해줄 사람이 나타날 거야, 그 말에 귀 기울여봐
+조력자 활용법: 낯선 사람의 제안도 한 번 들어보면 예상치 못한 도움이 될 거야
+
+{
+  "helper_title": "구체적인 조력자 제목",
+  "helper_interpretation": "마침표 없이 구체적인 조력자 해석 (50-60자)",
+  "helper_message": "마침표 없이 구체적인 조력자 활용법 (50-60자)"
+}`;
+}
+
+// 방해꾼 알아보기 프롬프트 생성 함수
+function generateHindrancePersonPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그에게 방해가 될 요소(사람, 상황, 에너지)를 구체적으로 분석해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 방해꾼: 감정적 혼란
+방해꾼 해석: 오늘은 과거의 감정이 떠올라 집중을 방해할 수 있어, 그 감정에 휘둘리지 마
+방해꾼 극복법: 감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐
+
+{
+  "hindrance_title": "구체적인 방해꾼 제목",
+  "hindrance_interpretation": "마침표 없이 구체적인 방해꾼 해석 (50-60자)",
+  "hindrance_message": "마침표 없이 구체적인 방해꾼 극복법 (50-60자)"
 }`;
 }
 
@@ -516,6 +834,93 @@ function parseBalanceResult(text) {
       balance_title: extractTextBlock(lines, 'balance_title:') || '일60% 연애30% 휴식10%',
       balance_interpretation: extractTextBlock(lines, 'balance_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
       balance_message: extractTextBlock(lines, 'balance_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
+    };
+  }
+}
+
+// 후회 방지 결과 파싱 함수
+function parseRegretPreventionResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      regret_title: extractTextBlock(lines, 'regret_title:') || '성급한 결정',
+      regret_interpretation: extractTextBlock(lines, 'regret_interpretation:') || '오늘은 충동적으로 중요한 결정을 내릴 위험이 있어, 한 번 더 생각해야 해',
+      regret_message: extractTextBlock(lines, 'regret_message:') || '후회하지 않으려면 오후 3시 이후에 결정을 내리면 더 나은 결과를 얻을 수 있을 거야'
+    };
+  }
+}
+
+// 조력자 알아보기 결과 파싱 함수
+function parseHelperPersonResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      helper_title: extractTextBlock(lines, 'helper_title:') || '따뜻한 조언자',
+      helper_interpretation: extractTextBlock(lines, 'helper_interpretation:') || '오늘은 주변에서 조언을 해줄 사람이 나타날 거야, 그 말에 귀 기울여봐',
+      helper_message: extractTextBlock(lines, 'helper_message:') || '낯선 사람의 제안도 한 번 들어보면 예상치 못한 도움이 될 거야'
+    };
+  }
+}
+
+// 방해꾼 알아보기 결과 파싱 함수
+function parseHindrancePersonResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      hindrance_title: extractTextBlock(lines, 'hindrance_title:') || '감정적 혼란',
+      hindrance_interpretation: extractTextBlock(lines, 'hindrance_interpretation:') || '오늘은 과거의 감정이 떠올라 집중을 방해할 수 있어, 그 감정에 휘둘리지 마',
+      hindrance_message: extractTextBlock(lines, 'hindrance_message:') || '감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐'
     };
   }
 }
