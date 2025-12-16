@@ -308,7 +308,7 @@ function generateUnconsciousPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 무의식: 불안한 도망자
@@ -316,9 +316,9 @@ function generateUnconsciousPrompt(data) {
 오늘의 메시지: 책임을 미루고 싶은 순간일수록, 작은 결단 하나가 내일의 안정을 만들어줄꺼야
 
 {
-  "unconscious_title": "구체적인 무의식 제목",
-  "unconscious_interpretation": "마침표 없이 구체적인 무의식 해석 (50-60자)",
-  "unconscious_message": "마침표 없이 구체적인 오늘의 메시지 (50-60자)"
+  "unconscious_title": "구체적인 무의식 제목(10글자 이하로 요약)",
+  "unconscious_interpretation": "마침표 없이 구체적인 무의식 해석 (35-50자)",
+  "unconscious_message": "마침표 없이 구체적인 오늘의 메시지 (35-50자)"
 }`;
 }
 
@@ -698,7 +698,7 @@ function generateRegretPreventionPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 후회 요소: 성급한 결정(10글자 이하로 요약)
@@ -706,9 +706,9 @@ function generateRegretPreventionPrompt(data) {
 후회 방지 조언: 후회하지 않으려면 오후 3시 이후에 결정을 내리면 더 나은 결과를 얻을 수 있을 거야
 
 {
-  "regret_title": "구체적인 후회 요소 제목",
-  "regret_interpretation": "마침표 없이 구체적인 후회 원인 분석 (50-60자)",
-  "regret_message": "마침표 없이 구체적인 후회 방지 조언 (50-60자)"
+  "regret_title": "구체적인 후회 요소 제목(10글자 이하로 요약)",
+  "regret_interpretation": "마침표 없이 구체적인 후회 원인 분석 (35-50자)",
+  "regret_message": "마침표 없이 구체적인 후회 방지 조언 (35-50자)"
 }`;
 }
 
@@ -739,7 +739,7 @@ function generateHelperPersonPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 조력자: 따뜻한 조언자(10글자 이하로 요약)
@@ -747,9 +747,9 @@ function generateHelperPersonPrompt(data) {
 조력자 활용법: 낯선 사람의 제안도 한 번 들어보면 예상치 못한 도움이 될 거야
 
 {
-  "helper_person_title": "구체적인 조력자 제목",
-  "helper_person_interpretation": "마침표 없이 구체적인 조력자 해석 (50-60자)",
-  "helper_person_message": "마침표 없이 구체적인 조력자 활용법 (50-60자)"
+  "helper_person_title": "구체적인 조력자 제목(10글자 이하로 요약)",
+  "helper_person_interpretation": "마침표 없이 구체적인 조력자 해석 (35-50자)",
+  "helper_person_message": "마침표 없이 구체적인 조력자 활용법 (35-50자)"
 }`;
 }
 
@@ -780,7 +780,7 @@ function generateHindrancePersonPrompt(data) {
 - 별자리: ${starSign}
 - MBTI: ${data.mbti || '미입력'}
 
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
 
 예시:
 오늘의 방해꾼: 감정적 혼란(10글자 이하로 요약)
@@ -788,9 +788,9 @@ function generateHindrancePersonPrompt(data) {
 방해꾼 극복법: 감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐
 
 {
-  "hindrance_person_title": "구체적인 방해꾼 제목",
-  "hindrance_person_interpretation": "마침표 없이 구체적인 방해꾼 해석 (50-60자)",
-  "hindrance_person_message": "마침표 없이 구체적인 방해꾼 극복법 (50-60자)"
+  "hindrance_person_title": "구체적인 방해꾼 제목(10글자 이하로 요약)",
+  "hindrance_person_interpretation": "마침표 없이 구체적인 방해꾼 해석 (35-50자)",
+  "hindrance_person_message": "마침표 없이 구체적인 방해꾼 극복법 (35-50자)"
 }`;
 }
 
