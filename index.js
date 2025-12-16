@@ -322,269 +322,6 @@ function generateUnconsciousPrompt(data) {
 }`;
 }
 
-// 후회 방지 프롬프트 생성 함수
-function generateRegretPreventionPrompt(data) {
-  const birthdate = data.birthdate;
-  const year = parseInt(birthdate.substring(0, 4));
-  const month = parseInt(birthdate.substring(4, 6));
-  const day = parseInt(birthdate.substring(6, 8));
-
-  const zodiac = calculateZodiac(year);
-  const starSign = calculateStarSign(month, day);
-  
-  let zodiacHour = '입력되지 않음';
-  if (data.birthtime) {
-    const [hour, minute] = data.birthtime.split(':');
-    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
-  }
-
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 후회할 수 있는 일을 구체적으로 예측하고 해결책을 제시해주세요.
-
-사용자 정보:
-- 성별: ${data.gender || '미입력'}
-- 생년월일: ${data.birthdate}
-- 출생시간: ${zodiacHour}
-- 띠: ${zodiac}띠
-- 별자리: ${starSign}
-- MBTI: ${data.mbti || '미입력'}
-
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
-
-예시:
-오늘의 후회 위험: 성급한 결정
-후회 원인 분석: 오늘은 충동적으로 중요한 결정을 내릴 위험이 있어, 한 번 더 생각해야 해
-후회 방지 조언: 후회하지 않으려면 오후 3시 이후에 결정을 내리면 더 나은 결과를 얻을 수 있을 거야
-
-{
-  "regret_title": "구체적인 후회 위험 제목",
-  "regret_interpretation": "마침표 없이 구체적인 후회 원인 분석 (50-60자)",
-  "regret_message": "마침표 없이 구체적인 후회 방지 조언 (50-60자)"
-}`;
-}
-
-// 조력자 프롬프트 생성 함수
-function generateHelperPersonPrompt(data) {
-  const birthdate = data.birthdate;
-  const year = parseInt(birthdate.substring(0, 4));
-  const month = parseInt(birthdate.substring(4, 6));
-  const day = parseInt(birthdate.substring(6, 8));
-
-  const zodiac = calculateZodiac(year);
-  const starSign = calculateStarSign(month, day);
-  
-  let zodiacHour = '입력되지 않음';
-  if (data.birthtime) {
-    const [hour, minute] = data.birthtime.split(':');
-    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
-  }
-
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 도움이 될 조력자(사람/상황/에너지)를 구체적으로 분석해주세요.
-
-사용자 정보:
-- 성별: ${data.gender || '미입력'}
-- 생년월일: ${data.birthdate}
-- 출생시간: ${zodiacHour}
-- 띠: ${zodiac}띠
-- 별자리: ${starSign}
-- MBTI: ${data.mbti || '미입력'}
-
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
-
-예시:
-오늘의 조력자: 따뜻한 조언자
-조력자 해석: 오늘은 주변에서 조언을 해줄 사람이 나타날 거야, 그 말에 귀 기울여봐
-조력자 활용법: 낯선 사람의 제안도 한 번 들어보면 예상치 못한 도움이 될 거야
-
-{
-  "helper_person_title": "구체적인 조력자 제목",
-  "helper_person_interpretation": "마침표 없이 구체적인 조력자 해석 (50-60자)",
-  "helper_person_message": "마침표 없이 구체적인 조력자 활용법 (50-60자)"
-}`;
-}
-
-// 방해꾼 프롬프트 생성 함수
-function generateHindrancePersonPrompt(data) {
-  const birthdate = data.birthdate;
-  const year = parseInt(birthdate.substring(0, 4));
-  const month = parseInt(birthdate.substring(4, 6));
-  const day = parseInt(birthdate.substring(6, 8));
-
-  const zodiac = calculateZodiac(year);
-  const starSign = calculateStarSign(month, day);
-  
-  let zodiacHour = '입력되지 않음';
-  if (data.birthtime) {
-    const [hour, minute] = data.birthtime.split(':');
-    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
-  }
-
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 방해가 될 요소(사람/상황/에너지)를 구체적으로 분석해주세요.
-
-사용자 정보:
-- 성별: ${data.gender || '미입력'}
-- 생년월일: ${data.birthdate}
-- 출생시간: ${zodiacHour}
-- 띠: ${zodiac}띠
-- 별자리: ${starSign}
-- MBTI: ${data.mbti || '미입력'}
-
-다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
-
-예시:
-오늘의 방해꾼: 감정적 혼란
-방해꾼 해석: 오늘은 과거의 감정이 떠올라 집중을 방해할 수 있어, 그 감정에 휘둘리지 마
-방해꾼 극복법: 감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐
-
-{
-  "hindrance_person_title": "구체적인 방해꾼 제목",
-  "hindrance_person_interpretation": "마침표 없이 구체적인 방해꾼 해석 (50-60자)",
-  "hindrance_person_message": "마침표 없이 구체적인 방해꾼 극복법 (50-60자)"
-}`;
-}
-
-// 밸런스 프롬프트 생성 함수
-function generateBalancePrompt(data) {
-  const birthdate = data.birthdate;
-  const year = parseInt(birthdate.substring(0, 4));
-  const month = parseInt(birthdate.substring(4, 6));
-  const day = parseInt(birthdate.substring(6, 8));
-
-  const zodiac = calculateZodiac(year);
-  const starSign = calculateStarSign(month, day);
-  
-  // 출생시간이 있는 경우 지지 계산
-  let zodiacHour = '입력되지 않음';
-  if (data.birthtime) {
-    const [hour, minute] = data.birthtime.split(':');
-    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
-  }
-
-  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
-사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 하루의 일상 밸런스를 분석해주세요.
-
-다음 **3가지 영역에 대해 100%를 분배**하여 사용자가 듣고싶어 할 재밌는 밸런스를 제안해주세요:
-- 일 (업무, 공부, 목표 달성)
-- 연애 (인간관계, 소통, 사랑)
-- 휴식 (여가, 휴식, 자기계발)
-
-조건:
-- 연애와 휴식은 각각 30% 이상이 자주 나오도록 강조하세요
-- 단, 아주 낮은 확률로 극단적인 밸런스(예: 일0% 연애0% 휴식100% 또는 일0% 연애65% 휴식35%)도 나오도록 허용하세요
-- 해석과 주의사항은 가볍고 위트있게, 인스타 스토리에 공유하고 싶을 정도로 재밌게 표현하세요
-- 결과는 매번 조금씩 달라지도록 랜덤성을 포함하세요
-
-사용자 정보:
-- 성별: ${data.gender || '미입력'}
-- 생년월일: ${data.birthdate}
-- 출생시간: ${zodiacHour}
-- 띠: ${zodiac}띠
-- 별자리: ${starSign}
-- MBTI: ${data.mbti || '미입력'}
-
-다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
-
-예시:
-오늘의 밸런스: 일XX% 연애XX% 휴식XX%
-밸런스 해석: 오늘은 XX이(가) 높으니 XX에 몰입하되 XX도 챙겨야 균형이 맞아
-밸런스 주의사항: 지나친 XX 집중으로 피로 쌓이지 않게 XX으로 마음을 풀어줘야해
-
-{
-  "balance_title": "일XX% 연애XX% 휴식XX%",
-  "balance_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
-  "balance_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
-}`;
-}
-
-// 운세 프롬프트 생성 함수
-function generateFortunePrompt(data) {
-  const birthdate = data.birthdate;
-  const year = parseInt(birthdate.substring(0, 4));
-  const month = parseInt(birthdate.substring(4, 6));
-  const day = parseInt(birthdate.substring(6, 8));
-
-  const zodiac = calculateZodiac(year);
-  const starSign = calculateStarSign(month, day);
-  
-  // 출생시간이 있는 경우 지지 계산
-  let zodiacHour = '입력되지 않음';
-  if (data.birthtime) {
-    const [hour, minute] = data.birthtime.split(':');
-    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
-  }
-
-  return `
-당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
-오늘 하루, 사용자의 정보를 바탕으로 신뢰감 있으면서도 행동을 지시하는 운세를 반말로 제시해주세요.
-운세 요약은 띠, 별자리, 사주 분석을 바탕으로 정리하되,
-사용자가 오늘 하루를 기대하게 만들 수 있는 따뜻하고 설득력 있는 문장으로 구성해 주세요 (문장 내 ; 사용 금지).
-
-[운세 요약 생성 요청]
-- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
-- 반드시 포함: 지지(80%), 별자리(10%), 띠(10%) 중 하나를 포함하여 문장 생성
-- 문체: 신뢰감 있으면서도 예측 불가능한 표현 사용
-- 분위기: 따뜻한 듯하면서도 소름 돋고, 조용한 흥분과 기대가 느껴지게
-- 목적: 읽는 사람이 행동하게 만들 것. 단순한 위로 금지.
-
-예시)
-- 천칭자리는 오늘 익숙한 공간 안에서 낯선 기운을 느끼게 돼, 이상해도 한 발 더 다가가야 해  
-- 자시에 태어난 너는 오늘 오후 느닷없는 침묵을 마주치게 돼, 그 순간 눈을 피하지 마 
-- 말띠는 오늘 거리에서 마주치는 우연에 기대 이상의 의미가 담겨 있어, 그걸 그냥 지나치지 마
-
-${data.mbti ? `[MBTI 처방전 요청]
-- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
-- 반드시 포함: MBTI 유형 + 실행 유도 행동 제안
-- 문체: 마치 친한 AI가 속삭이듯, 부드럽지만 명확하게
-- 목적: 오늘 하루를 구체적으로 움직이게 만드는 실용적 제안
-- 뻔한 성격 분석, 일반 조언 금지
-
-예시)
-- ENFP는 오늘 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
-- INTJ는 오늘 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
-
-사용자 정보:
-성별: ${data.gender || '입력되지 않음'}
-생년월일: ${data.birthdate}
-출생시간: ${zodiacHour}
-띠: ${zodiac}띠
-별자리: ${starSign}
-${data.mbti ? `MBTI: ${data.mbti}` : ''}
-
-[출력 형식]
-운세 요약: 위에서 제시한 조건에 맞춰 운세 요약을 생성해주세요.
-${data.mbti ? 'MBTI 처방전: 위에서 제시한 조건에 맞춰 MBTI 처방전을 생성해주세요.' : ''}`;
-}
-
-// 운세 결과 파싱 함수
-function parseFortuneResult(text) {
-  const lines = text.split('\n').map(l => l.trim());
-  
-  // 확률 기반으로 점수 생성
-  const scores = {
-    money: generateRandomScore(),
-    love: generateRandomScore(),
-    career: generateRandomScore(),
-    health: generateRandomScore()
-  };
-
-  // 종합 지수 계산 (단순 평균)
-  const totalScore = Math.round(
-    (scores.money + scores.love + scores.career + scores.health) / 4
-  );
-
-  return {
-    money: scores.money,
-    love: scores.love,
-    career: scores.career,
-    health: scores.health,
-    total: totalScore,
-    fortune: extractTextBlock(lines, '운세 요약:') || '오늘은 좋은 일이 가득할 것입니다.',
-    mbtiTip: extractTextBlock(lines, 'MBTI 처방전:') || 'MBTI 특성을 살려 오늘 하루를 보내세요.'
-  };
-}
-
 // 후회 방지 생성 API 엔드포인트
 app.post('/generate-regret-prevention', async (req, res) => {
   try {
@@ -765,6 +502,146 @@ app.post('/generate-hindrance-person', async (req, res) => {
   }
 });
 
+// 밸런스 프롬프트 생성 함수
+function generateBalancePrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 하루의 일상 밸런스를 분석해주세요.
+
+다음 **3가지 영역에 대해 100%를 분배**하여 사용자가 듣고싶어 할 재밌는 밸런스를 제안해주세요:
+- 일 (업무, 공부, 목표 달성)
+- 연애 (인간관계, 소통, 사랑)
+- 휴식 (여가, 휴식, 자기계발)
+
+조건:
+- 연애와 휴식은 각각 30% 이상이 자주 나오도록 강조하세요
+- 단, 아주 낮은 확률로 극단적인 밸런스(예: 일0% 연애0% 휴식100% 또는 일0% 연애65% 휴식35%)도 나오도록 허용하세요
+- 해석과 주의사항은 가볍고 위트있게, 인스타 스토리에 공유하고 싶을 정도로 재밌게 표현하세요
+- 결과는 매번 조금씩 달라지도록 랜덤성을 포함하세요
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 35자~50자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 밸런스: 일XX% 연애XX% 휴식XX%
+밸런스 해석: 오늘은 XX이(가) 높으니 XX에 몰입하되 XX도 챙겨야 균형이 맞아
+밸런스 주의사항: 지나친 XX 집중으로 피로 쌓이지 않게 XX으로 마음을 풀어줘야해
+
+{
+  "balance_title": "일XX% 연애XX% 휴식XX%",
+  "balance_interpretation": "마침표 없이 구체적인 밸런스 해석 (35-50자)",
+  "balance_message": "마침표 없이 구체적인 밸런스 주의사항 (35-50자)"
+}`;
+}
+
+// 운세 프롬프트 생성 함수
+function generateFortunePrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `
+당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+오늘 하루, 사용자의 정보를 바탕으로 신뢰감 있으면서도 행동을 지시하는 운세를 반말로 제시해주세요.
+운세 요약은 띠, 별자리, 사주 분석을 바탕으로 정리하되,
+사용자가 오늘 하루를 기대하게 만들 수 있는 따뜻하고 설득력 있는 문장으로 구성해 주세요 (문장 내 ; 사용 금지).
+
+[운세 요약 생성 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: 지지(80%), 별자리(10%), 띠(10%) 중 하나를 포함하여 문장 생성
+- 문체: 신뢰감 있으면서도 예측 불가능한 표현 사용
+- 분위기: 따뜻한 듯하면서도 소름 돋고, 조용한 흥분과 기대가 느껴지게
+- 목적: 읽는 사람이 행동하게 만들 것. 단순한 위로 금지.
+
+예시)
+- 천칭자리는 오늘 익숙한 공간 안에서 낯선 기운을 느끼게 돼, 이상해도 한 발 더 다가가야 해  
+- 자시에 태어난 너는 오늘 오후 느닷없는 침묵을 마주치게 돼, 그 순간 눈을 피하지 마 
+- 말띠는 오늘 거리에서 마주치는 우연에 기대 이상의 의미가 담겨 있어, 그걸 그냥 지나치지 마
+
+${data.mbti ? `[MBTI 처방전 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: MBTI 유형 + 실행 유도 행동 제안
+- 문체: 마치 친한 AI가 속삭이듯, 부드럽지만 명확하게
+- 목적: 오늘 하루를 구체적으로 움직이게 만드는 실용적 제안
+- 뻔한 성격 분석, 일반 조언 금지
+
+예시)
+- ENFP는 오늘 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
+- INTJ는 오늘 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
+
+사용자 정보:
+성별: ${data.gender || '입력되지 않음'}
+생년월일: ${data.birthdate}
+출생시간: ${zodiacHour}
+띠: ${zodiac}띠
+별자리: ${starSign}
+${data.mbti ? `MBTI: ${data.mbti}` : ''}
+
+[출력 형식]
+운세 요약: 위에서 제시한 조건에 맞춰 운세 요약을 생성해주세요.
+${data.mbti ? 'MBTI 처방전: 위에서 제시한 조건에 맞춰 MBTI 처방전을 생성해주세요.' : ''}`;
+}
+
+// 운세 결과 파싱 함수
+function parseFortuneResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // 확률 기반으로 점수 생성
+  const scores = {
+    money: generateRandomScore(),
+    love: generateRandomScore(),
+    career: generateRandomScore(),
+    health: generateRandomScore()
+  };
+
+  // 종합 지수 계산 (단순 평균)
+  const totalScore = Math.round(
+    (scores.money + scores.love + scores.career + scores.health) / 4
+  );
+
+  return {
+    money: scores.money,
+    love: scores.love,
+    career: scores.career,
+    health: scores.health,
+    total: totalScore,
+    fortune: extractTextBlock(lines, '운세 요약:') || '오늘은 좋은 일이 가득할 것입니다.',
+    mbtiTip: extractTextBlock(lines, 'MBTI 처방전:') || 'MBTI 특성을 살려 오늘 하루를 보내세요.'
+  };
+}
+
 // 무의식 결과 파싱 함수
 function parseUnconsciousResult(text) {
   const lines = text.split('\n').map(l => l.trim());
@@ -794,33 +671,127 @@ function parseUnconsciousResult(text) {
   }
 }
 
-// 밸런스 결과 파싱 함수
-function parseBalanceResult(text) {
-  const lines = text.split('\n').map(l => l.trim());
+// 후회 방지 프롬프트 생성 함수
+function generateRegretPreventionPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
   
-  // JSON 응답에서 직접 파싱 시도
-  try {
-    // 마크다운 코드 블록 제거
-    let cleanText = text;
-    if (cleanText.includes('```json')) {
-      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    }
-    if (cleanText.includes('```')) {
-      cleanText = cleanText.replace(/```\n?/g, '');
-    }
-    
-    const parsedResult = JSON.parse(cleanText);
-    return parsedResult;
-  } catch (parseError) {
-    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
-    
-    // 텍스트 블록 추출으로 폴백
-    return {
-      balance_title: extractTextBlock(lines, 'balance_title:') || '일60% 연애30% 휴식10%',
-      balance_interpretation: extractTextBlock(lines, 'balance_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
-      balance_message: extractTextBlock(lines, 'balance_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
-    };
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
   }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 후회할 수 있는 일을 구체적으로 예측하고 해결책을 제시해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 후회 위험: 성급한 결정
+후회 원인 분석: 오늘은 충동적으로 중요한 결정을 내릴 위험이 있어, 한 번 더 생각해야 해
+후회 방지 조언: 후회하지 않으려면 오후 3시 이후에 결정을 내리면 더 나은 결과를 얻을 수 있을 거야
+
+{
+  "regret_title": "구체적인 후회 위험 제목",
+  "regret_interpretation": "마침표 없이 구체적인 후회 원인 분석 (50-60자)",
+  "regret_message": "마침표 없이 구체적인 후회 방지 조언 (50-60자)"
+}`;
+}
+
+// 조력자 프롬프트 생성 함수
+function generateHelperPersonPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 도움이 될 조력자(사람/상황/에너지)를 구체적으로 분석해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 조력자: 따뜻한 조언자
+조력자 해석: 오늘은 주변에서 조언을 해줄 사람이 나타날 거야, 그 말에 귀 기울여봐
+조력자 활용법: 낯선 사람의 제안도 한 번 들어보면 예상치 못한 도움이 될 거야
+
+{
+  "helper_person_title": "구체적인 조력자 제목",
+  "helper_person_interpretation": "마침표 없이 구체적인 조력자 해석 (50-60자)",
+  "helper_person_message": "마침표 없이 구체적인 조력자 활용법 (50-60자)"
+}`;
+}
+
+// 방해꾼 프롬프트 생성 함수
+function generateHindrancePersonPrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 및 심리학 전문가입니다.
+사용자가 입력한 정보의 사주, 띠, 별자리, MBTI를 분석해서 오늘 그가 방해가 될 요소(사람/상황/에너지)를 구체적으로 분석해주세요.
+
+사용자 정보:
+- 성별: ${data.gender || '미입력'}
+- 생년월일: ${data.birthdate}
+- 출생시간: ${zodiacHour}
+- 띠: ${zodiac}띠
+- 별자리: ${starSign}
+- MBTI: ${data.mbti || '미입력'}
+
+다음 형식으로 **무조건 50자~60자로 상세한 이유를 갖춰** JSON 응답해주세요 (마크다운 코드 블록 없이 순수 JSON만):
+
+예시:
+오늘의 방해꾼: 감정적 혼란
+방해꾼 해석: 오늘은 과거의 감정이 떠올라 집중을 방해할 수 있어, 그 감정에 휘둘리지 마
+방해꾼 극복법: 감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐
+
+{
+  "hindrance_person_title": "구체적인 방해꾼 제목",
+  "hindrance_person_interpretation": "마침표 없이 구체적인 방해꾼 해석 (50-60자)",
+  "hindrance_person_message": "마침표 없이 구체적인 방해꾼 극복법 (50-60자)"
+}`;
 }
 
 // 후회 방지 결과 파싱 함수
@@ -897,6 +868,35 @@ function parseHindrancePersonResult(text) {
       hindrance_person_title: extractTextBlock(lines, 'hindrance_person_title:') || '감정적 혼란',
       hindrance_person_interpretation: extractTextBlock(lines, 'hindrance_person_interpretation:') || '오늘은 과거의 감정이 떠올라 집중을 방해할 수 있어, 그 감정에 휘둘리지 마',
       hindrance_person_message: extractTextBlock(lines, 'hindrance_person_message:') || '감정이 올라올 때마다 심호흡을 하고 지금 이 순간에 집중해봐'
+    };
+  }
+}
+
+// 밸런스 결과 파싱 함수
+function parseBalanceResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // JSON 응답에서 직접 파싱 시도
+  try {
+    // 마크다운 코드 블록 제거
+    let cleanText = text;
+    if (cleanText.includes('```json')) {
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    if (cleanText.includes('```')) {
+      cleanText = cleanText.replace(/```\n?/g, '');
+    }
+    
+    const parsedResult = JSON.parse(cleanText);
+    return parsedResult;
+  } catch (parseError) {
+    console.error('JSON 파싱 실패, 텍스트 블록 추출 시도:', parseError);
+    
+    // 텍스트 블록 추출으로 폴백
+    return {
+      balance_title: extractTextBlock(lines, 'balance_title:') || '일60% 연애30% 휴식10%',
+      balance_interpretation: extractTextBlock(lines, 'balance_interpretation:') || '오늘은 업무에 집중하되 인간관계도 소홀히 하지 마세요',
+      balance_message: extractTextBlock(lines, 'balance_message:') || '과도한 일 집중으로 인한 스트레스에 주의하고 적절한 휴식을 취하세요'
     };
   }
 }
