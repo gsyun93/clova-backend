@@ -1140,7 +1140,7 @@ app.post('/api/ocr-dropout', async (req, res) => {
 // 통계 데이터 저장
 app.post('/api/statistics', async (req, res) => {
   try {
-    const { gender, birth_date, time_slot, weekday, mbti, selected_service } = req.body;
+    const { gender, birth_date, time_slot, weekday, mbti, selected_service, camera_auth_enabled } = req.body;
 
     // 필수 필드 검증
     if (!gender || !birth_date || !time_slot || !weekday || !selected_service) {
@@ -1159,7 +1159,8 @@ app.post('/api/statistics', async (req, res) => {
         time_slot,
         weekday,
         mbti,
-        selected_service
+        selected_service,
+        camera_auth_enabled: camera_auth_enabled !== undefined ? camera_auth_enabled : null
       }])
       .select();
 
@@ -1425,9 +1426,10 @@ app.get('/api/statistics', async (req, res) => {
     // 교차 분석
     const crossAnalysis = calculateCrossAnalysis(data);
     
-    // OCR 이탈률 계산
+    // OCR 이탈률 계산 (카메라 ON인 경우만)
     const todayAiContentSelections = todayData.filter(item => 
-      ['운세', '무의식', '밸런스', '후회 방지', '조력자', '방해꾼'].includes(item.selected_service)
+      ['운세', '무의식', '밸런스', '후회 방지', '조력자', '방해꾼'].includes(item.selected_service) &&
+      item.camera_auth_enabled === true
     ).length;
     
     let todayOcrDropouts = 0;
