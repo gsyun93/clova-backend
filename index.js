@@ -1092,7 +1092,7 @@ app.post('/clova-ocr', async (req, res) => {
 // OCR 이탈 데이터 저장
 app.post('/api/ocr-dropout', async (req, res) => {
   try {
-    const { reason, timestamp } = req.body;
+    const { reason, selected_service, timestamp } = req.body;
     
     // 입력 데이터 검증
     if (!reason) {
@@ -1102,13 +1102,14 @@ app.post('/api/ocr-dropout', async (req, res) => {
       });
     }
 
-    console.log('OCR 이탈 데이터 저장 요청:', { reason, timestamp: timestamp || new Date().toISOString() });
+    console.log('OCR 이탈 데이터 저장 요청:', { reason, selected_service, timestamp: timestamp || new Date().toISOString() });
 
     // Supabase에 OCR 이탈 데이터 저장
     const { data, error } = await supabase
       .from('ocr_dropouts')
       .insert([{
-        reason
+        reason,
+        selected_service: selected_service || null
         // created_at은 자동으로 설정됨 (DEFAULT now())
       }])
       .select();
@@ -1551,12 +1552,63 @@ app.get('/api/statistics', async (req, res) => {
       recentMonthServiceStats[item.selected_service] = (recentMonthServiceStats[item.selected_service] || 0) + 1;
     });
     
-    // 최근 한달 이탈률 계산 (실제 이탈률이 아닌 임시값을 사용)
-    const recentMonthConversionRates = {
-      운세: 75,
-      무의식: 72,
-      밸런스: 73
-    };
+    // 최근 한달 전환률 계산 (실제 데이터 기반)
+    const recentMonthConversionRates = {};
+    
+    // 서비스 목록 동적 추출
+    const allServices = new Set();
+    recentMonthData.forEach(item => {
+      if (item.selected_service) allServices.add(item.selected_service);
+    });
+    
+    // 최근 한달 OCR 이탈 데이터 조회
+    let recentMonthOcrDropouts = {};
+    try {
+      const { data: dropoutData, error: dropoutError } = await supabase
+        .from('ocr_dropouts')
+        .select('*');
+      
+      if (!dropoutError && dropoutData) {
+        // 최근 한달 이탈 데이터 필터링 및 서비스별 카운트
+        const filteredDropouts = dropoutData.filter(item => {
+          const itemDate = toKST(new Date(item.created_at));
+          return itemDate >= recentMonthStart && itemDate < todayEnd;
+        });
+        
+        filteredDropouts.forEach(item => {
+          const service = item.selected_service;
+          if (service) {
+            if (!recentMonthOcrDropouts[service]) {
+              recentMonthOcrDropouts[service] = 0;
+            }
+            recentMonthOcrDropouts[service]++;
+          }
+        });
+      }
+    } catch (dropoutErr) {
+      console.error('최근 한달 OCR 이탈 데이터 조회 오류:', dropoutErr);
+    }
+    
+    // 각 서비스별 전환률 계산
+    allServices.forEach(service => {
+      // 분모: 최근 한달 카메라 ON인 해당 서비스 선택 수
+      const totalSelections = recentMonthData.filter(item => 
+        item.selected_service === service && item.camera_auth_enabled === true
+      ).length;
+      
+      // 분자: 최근 한달 해당 서비스 OCR 이탈 수
+      const dropouts = recentMonthOcrDropouts[service] || 0;
+      
+      // 전환률 계산 (성공률 = (전체 - 이탈) / 전체 * 100)
+      if (totalSelections > 0) {
+        const successCount = totalSelections - dropouts;
+        const conversionRate = Math.round((successCount / totalSelections) * 100);
+        recentMonthConversionRates[service] = conversionRate;
+      } else {
+        // 데이터가 없으면 0으로 설정 (또는 null)
+        recentMonthConversionRates[service] = 0;
+      }
+    });
     
     res.json({
       success: true,
