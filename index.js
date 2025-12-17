@@ -1410,10 +1410,10 @@ app.get('/api/statistics', async (req, res) => {
     data.forEach(item => {
       const timeGroup = categorizeTimeSlot(item.time_slot);
       if (!timeGroupedStats[timeGroup]) {
-        timeGroupedStats[timeGroup] = { 운세: 0, 무의식: 0, 밸런스: 0, 합계: 0 };
+        timeGroupedStats[timeGroup] = { 운세: 0, 무의식: 0, 밸런스: 0, '후회 방지': 0, 조력자: 0, 방해꾼: 0, 합계: 0 };
       }
       const service = item.selected_service;
-      if (service === '운세' || service === '무의식' || service === '밸런스') {
+      if (timeGroupedStats[timeGroup][service] !== undefined) {
         timeGroupedStats[timeGroup][service]++;
         timeGroupedStats[timeGroup].합계++;
       }
@@ -1427,7 +1427,7 @@ app.get('/api/statistics', async (req, res) => {
     
     // OCR 이탈률 계산
     const todayAiContentSelections = todayData.filter(item => 
-      ['운세', '무의식', '밸런스'].includes(item.selected_service)
+      ['운세', '무의식', '밸런스', '후회 방지', '조력자', '방해꾼'].includes(item.selected_service)
     ).length;
     
     let todayOcrDropouts = 0;
@@ -1455,41 +1455,49 @@ app.get('/api/statistics', async (req, res) => {
       timePatternStats[timeGroup] = (timePatternStats[timeGroup] || 0) + 1;
     });
     
-    // 시간대별 서비스 인기도
+    // 시간대별 서비스 인기도 (동적 처리)
     const timeServicePopularity = {};
     recentMonthData.forEach(item => {
       const timeGroup = categorizeTimeSlot(item.time_slot);
       if (!timeServicePopularity[timeGroup]) {
-        timeServicePopularity[timeGroup] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+        timeServicePopularity[timeGroup] = {};
       }
       const service = item.selected_service;
-      if (timeServicePopularity[timeGroup][service] !== undefined) {
-        timeServicePopularity[timeGroup][service]++;
+      if (!timeServicePopularity[timeGroup][service]) {
+        timeServicePopularity[timeGroup][service] = 0;
       }
+      timeServicePopularity[timeGroup][service]++;
     });
     
-    // 트렌드 비교
+    // 트렌드 비교 (동적 처리)
+    const allServices = new Set();
+    recentMonthData.forEach(d => {
+      if (d.selected_service) allServices.add(d.selected_service);
+    });
+    previousMonthData.forEach(d => {
+      if (d.selected_service) allServices.add(d.selected_service);
+    });
+    
     const trendComparison = {
       recent: {
-        총이용자: recentMonthData.length,
-        운세: recentMonthData.filter(d => d.selected_service === '운세').length,
-        무의식: recentMonthData.filter(d => d.selected_service === '무의식').length,
-        밸런스: recentMonthData.filter(d => d.selected_service === '밸런스').length
+        총이용자: recentMonthData.length
       },
       previous: {
-        총이용자: previousMonthData.length,
-        운세: previousMonthData.filter(d => d.selected_service === '운세').length,
-        무의식: previousMonthData.filter(d => d.selected_service === '무의식').length,
-        밸런스: previousMonthData.filter(d => d.selected_service === '밸런스').length
+        총이용자: previousMonthData.length
       }
     };
+    
+    allServices.forEach(service => {
+      trendComparison.recent[service] = recentMonthData.filter(d => d.selected_service === service).length;
+      trendComparison.previous[service] = previousMonthData.filter(d => d.selected_service === service).length;
+    });
     
     // MBTI별 서비스 통계
     const mbtiServiceStats = {};
     data.forEach(item => {
       if (item.mbti) {
         if (!mbtiServiceStats[item.mbti]) {
-          mbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+          mbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0, '후회 방지': 0, 조력자: 0, 방해꾼: 0 };
         }
         if (mbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
           mbtiServiceStats[item.mbti][item.selected_service]++;
@@ -1497,7 +1505,7 @@ app.get('/api/statistics', async (req, res) => {
       }
     });
     
-    // 연령대별 상세 통계 (최근 한달 데이터만)
+    // 연령대별 상세 통계 (최근 한달 데이터만, 동적 처리)
     const ageDetailedStats = {};
     recentMonthData.forEach(item => {
       const age = calculateAge(item.birth_date);
@@ -1508,23 +1516,27 @@ app.get('/api/statistics', async (req, res) => {
       else if (age < 50) ageGroup = '40대';
       
       if (!ageDetailedStats[ageGroup]) {
-        ageDetailedStats[ageGroup] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+        ageDetailedStats[ageGroup] = {};
       }
-      if (ageDetailedStats[ageGroup][item.selected_service] !== undefined) {
-        ageDetailedStats[ageGroup][item.selected_service]++;
+      const service = item.selected_service;
+      if (!ageDetailedStats[ageGroup][service]) {
+        ageDetailedStats[ageGroup][service] = 0;
       }
+      ageDetailedStats[ageGroup][service]++;
     });
     
-    // 최근 한달 MBTI별 서비스 통계
+    // 최근 한달 MBTI별 서비스 통계 (동적 처리)
     const recentMonthMbtiServiceStats = {};
     recentMonthData.forEach(item => {
       if (item.mbti) {
         if (!recentMonthMbtiServiceStats[item.mbti]) {
-          recentMonthMbtiServiceStats[item.mbti] = { 운세: 0, 무의식: 0, 밸런스: 0 };
+          recentMonthMbtiServiceStats[item.mbti] = {};
         }
-        if (recentMonthMbtiServiceStats[item.mbti][item.selected_service] !== undefined) {
-          recentMonthMbtiServiceStats[item.mbti][item.selected_service]++;
+        const service = item.selected_service;
+        if (!recentMonthMbtiServiceStats[item.mbti][service]) {
+          recentMonthMbtiServiceStats[item.mbti][service] = 0;
         }
+        recentMonthMbtiServiceStats[item.mbti][service]++;
       }
     });
     
