@@ -1571,13 +1571,20 @@ app.get('/api/statistics', async (req, res) => {
       if (!dropoutError && dropoutData) {
         // 최근 한달 이탈 데이터 필터링 및 서비스별 카운트
         const filteredDropouts = dropoutData.filter(item => {
-          const itemDate = toKST(new Date(item.created_at));
-          return itemDate >= recentMonthStart && itemDate < todayEnd;
+          if (!item.created_at) return false;
+          try {
+            const itemDate = toKST(new Date(item.created_at));
+            if (isNaN(itemDate.getTime())) return false;
+            return itemDate >= recentMonthStart && itemDate < todayEnd;
+          } catch (err) {
+            console.error('날짜 변환 오류:', err);
+            return false;
+          }
         });
         
         filteredDropouts.forEach(item => {
           const service = item.selected_service;
-          if (service) {
+          if (service && service.trim() !== '') {
             if (!recentMonthOcrDropouts[service]) {
               recentMonthOcrDropouts[service] = 0;
             }
@@ -1601,11 +1608,11 @@ app.get('/api/statistics', async (req, res) => {
       
       // 전환률 계산 (성공률 = (전체 - 이탈) / 전체 * 100)
       if (totalSelections > 0) {
-        const successCount = totalSelections - dropouts;
-        const conversionRate = Math.round((successCount / totalSelections) * 100);
+        const successCount = Math.max(0, totalSelections - dropouts); // 음수 방지
+        const conversionRate = Math.max(0, Math.min(100, Math.round((successCount / totalSelections) * 100))); // 0-100 범위 제한
         recentMonthConversionRates[service] = conversionRate;
       } else {
-        // 데이터가 없으면 0으로 설정 (또는 null)
+        // 데이터가 없으면 0으로 설정
         recentMonthConversionRates[service] = 0;
       }
     });
