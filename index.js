@@ -1556,9 +1556,9 @@ app.get('/api/statistics', async (req, res) => {
     const recentMonthConversionRates = {};
     
     // 서비스 목록 동적 추출
-    const allServices = new Set();
+    const conversionServices = new Set();
     recentMonthData.forEach(item => {
-      if (item.selected_service) allServices.add(item.selected_service);
+      if (item.selected_service) conversionServices.add(item.selected_service);
     });
     
     // 최근 한달 OCR 이탈 데이터 조회
@@ -1571,20 +1571,13 @@ app.get('/api/statistics', async (req, res) => {
       if (!dropoutError && dropoutData) {
         // 최근 한달 이탈 데이터 필터링 및 서비스별 카운트
         const filteredDropouts = dropoutData.filter(item => {
-          if (!item.created_at) return false;
-          try {
-            const itemDate = toKST(new Date(item.created_at));
-            if (isNaN(itemDate.getTime())) return false;
-            return itemDate >= recentMonthStart && itemDate < todayEnd;
-          } catch (err) {
-            console.error('날짜 변환 오류:', err);
-            return false;
-          }
+          const itemDate = toKST(new Date(item.created_at));
+          return itemDate >= recentMonthStart && itemDate < todayEnd;
         });
         
         filteredDropouts.forEach(item => {
           const service = item.selected_service;
-          if (service && service.trim() !== '') {
+          if (service) {
             if (!recentMonthOcrDropouts[service]) {
               recentMonthOcrDropouts[service] = 0;
             }
@@ -1597,7 +1590,7 @@ app.get('/api/statistics', async (req, res) => {
     }
     
     // 각 서비스별 전환률 계산
-    allServices.forEach(service => {
+    conversionServices.forEach(service => {
       // 분모: 최근 한달 카메라 ON인 해당 서비스 선택 수
       const totalSelections = recentMonthData.filter(item => 
         item.selected_service === service && item.camera_auth_enabled === true
@@ -1608,11 +1601,11 @@ app.get('/api/statistics', async (req, res) => {
       
       // 전환률 계산 (성공률 = (전체 - 이탈) / 전체 * 100)
       if (totalSelections > 0) {
-        const successCount = Math.max(0, totalSelections - dropouts); // 음수 방지
-        const conversionRate = Math.max(0, Math.min(100, Math.round((successCount / totalSelections) * 100))); // 0-100 범위 제한
+        const successCount = totalSelections - dropouts;
+        const conversionRate = Math.round((successCount / totalSelections) * 100);
         recentMonthConversionRates[service] = conversionRate;
       } else {
-        // 데이터가 없으면 0으로 설정
+        // 데이터가 없으면 0으로 설정 (또는 null)
         recentMonthConversionRates[service] = 0;
       }
     });
