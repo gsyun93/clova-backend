@@ -217,6 +217,69 @@ app.post('/generate-balance', async (req, res) => {
 });
 
 // 운세 생성 API 엔드포인트
+app.post('/generate-new-year-fortune', async (req, res) => {
+  try {
+    const { birthdate, birthtime, mbti, gender } = req.body;
+    
+    // 입력 데이터 검증
+    if (!birthdate) {
+      return res.status(400).json({ error: '생년월일이 필요합니다.' });
+    }
+
+    // 신년운세 프롬프트 생성
+    const prompt = generateNewYearFortunePrompt({ birthdate, birthtime, mbti, gender });
+    
+    console.log('신년운세 생성 시작:', { birthdate, birthtime, mbti, gender });
+    
+    // OpenAI API 호출
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + gptApiKey
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API 오류 응답:', errorText);
+      throw new Error(`OpenAI API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices?.[0]?.message?.content || '';
+    
+    if (!text) {
+      throw new Error('OpenAI 응답이 비어있습니다');
+    }
+
+    console.log('신년운세 생성 성공');
+    console.log('=== AI가 생성한 신년운세 내용 ===');
+    console.log(text);
+    console.log('=== AI 응답 끝 ===');
+    
+    // 신년운세 결과 파싱 및 반환
+    const newYearFortuneResult = parseNewYearFortuneResult(text);
+    console.log('=== 파싱된 신년운세 결과 ===');
+    console.log(newYearFortuneResult);
+    console.log('=== 파싱 결과 끝 ===');
+    
+    res.json(newYearFortuneResult);
+
+  } catch (error) {
+    console.error('신년운세 생성 오류:', error);
+    res.status(500).json({ 
+      error: '신년운세 생성 중 오류 발생',
+      message: error.message 
+    });
+  }
+});
+
 app.post('/generate-fortune', async (req, res) => {
   try {
     const { birthdate, birthtime, mbti, gender } = req.body;
@@ -555,6 +618,67 @@ function generateBalancePrompt(data) {
 }`;
 }
 
+// 신년운세 프롬프트 생성 함수
+function generateNewYearFortunePrompt(data) {
+  const birthdate = data.birthdate;
+  const year = parseInt(birthdate.substring(0, 4));
+  const month = parseInt(birthdate.substring(4, 6));
+  const day = parseInt(birthdate.substring(6, 8));
+
+  const zodiac = calculateZodiac(year);
+  const starSign = calculateStarSign(month, day);
+  
+  // 출생시간이 있는 경우 지지 계산
+  let zodiacHour = '입력되지 않음';
+  if (data.birthtime) {
+    const [hour, minute] = data.birthtime.split(':');
+    zodiacHour = calculateZodiacHour(parseInt(hour), parseInt(minute || '0'));
+  }
+
+  return `
+당신은 사주, 띠, 별자리, MBTI에 통달한 직관력 있는 반말 운세 전문가입니다.
+2026년 전체, 사용자의 정보를 바탕으로 신뢰감 있으면서도 행동을 지시하는 신년운세를 반말로 제시해주세요.
+신년 운세 요약은 띠, 별자리, 사주 분석을 바탕으로 정리하되,
+사용자가 2026년을 기대하게 만들 수 있는 따뜻하고 설득력 있는 문장으로 구성해 주세요 (문장 내 ; 사용 금지).
+
+[신년 운세 요약 생성 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: 지지(80%), 별자리(10%), 띠(10%) 중 하나를 포함하여 문장 생성
+- 문체: 신뢰감 있으면서도 예측 불가능한 표현 사용
+- 분위기: 따뜻한 듯하면서도 소름 돋고, 조용한 흥분과 기대가 느껴지게
+- 목적: 읽는 사람이 행동하게 만들 것. 단순한 위로 금지.
+- 시간 범위: 2026년 전체
+
+예시)
+- 천칭자리는 2026년 익숙한 공간 안에서 낯선 기운을 느끼게 돼, 이상해도 한 발 더 다가가야 해  
+- 자시에 태어난 너는 2026년 오후 느닷없는 침묵을 마주치게 돼, 그 순간 눈을 피하지 마 
+- 말띠는 2026년 거리에서 마주치는 우연에 기대 이상의 의미가 담겨 있어, 그걸 그냥 지나치지 마
+
+${data.mbti ? `[신년 가이드 안내 요청]
+- 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
+- 반드시 포함: MBTI 유형 + 실행 유도 행동 제안
+- 문체: 마치 친한 AI가 속삭이듯, 부드럽지만 명확하게
+- 목적: 2026년을 구체적으로 움직이게 만드는 실용적 제안
+- 뻔한 성격 분석, 일반 조언 금지
+- 시간 범위: 2026년 전체
+
+예시)
+- ENFP는 2026년 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
+- INTJ는 2026년 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
+
+사용자 정보:
+성별: ${data.gender || '입력되지 않음'}
+생년월일: ${data.birthdate}
+출생시간: ${zodiacHour}
+띠: ${zodiac}띠
+별자리: ${starSign}
+${data.mbti ? `MBTI: ${data.mbti}` : ''}
+
+[출력 형식]
+신년 운세 요약: 위에서 제시한 조건에 맞춰 신년 운세 요약을 생성해주세요.
+${data.mbti ? '신년 가이드 안내: 위에서 제시한 조건에 맞춰 신년 가이드 안내를 생성해주세요.' : ''}`;
+}
+
 // 운세 프롬프트 생성 함수
 function generateFortunePrompt(data) {
   const birthdate = data.birthdate;
@@ -612,6 +736,34 @@ ${data.mbti ? `MBTI: ${data.mbti}` : ''}
 [출력 형식]
 운세 요약: 위에서 제시한 조건에 맞춰 운세 요약을 생성해주세요.
 ${data.mbti ? 'MBTI 처방전: 위에서 제시한 조건에 맞춰 MBTI 처방전을 생성해주세요.' : ''}`;
+}
+
+// 신년운세 결과 파싱 함수
+function parseNewYearFortuneResult(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // 확률 기반으로 점수 생성
+  const scores = {
+    money: generateRandomScore(),
+    love: generateRandomScore(),
+    career: generateRandomScore(),
+    health: generateRandomScore()
+  };
+
+  // 종합 지수 계산 (단순 평균)
+  const totalScore = Math.round(
+    (scores.money + scores.love + scores.career + scores.health) / 4
+  );
+
+  return {
+    money: scores.money,
+    love: scores.love,
+    career: scores.career,
+    health: scores.health,
+    total: totalScore,
+    fortune: extractTextBlock(lines, '신년 운세 요약:') || '2026년은 좋은 일이 가득할 것입니다.',
+    guideTip: extractTextBlock(lines, '신년 가이드 안내:') || 'MBTI 특성을 살려 2026년을 보내세요.'
+  };
 }
 
 // 운세 결과 파싱 함수
