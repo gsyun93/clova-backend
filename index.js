@@ -654,7 +654,7 @@ function generateNewYearFortunePrompt(data) {
 - 자시에 태어난 너는 2026년 오후 느닷없는 침묵을 마주치게 돼, 그 순간 눈을 피하지 마 
 - 말띠는 2026년 거리에서 마주치는 우연에 기대 이상의 의미가 담겨 있어, 그걸 그냥 지나치지 마
 
-${data.mbti ? `[신년 가이드 안내 요청]
+${data.mbti ? `[MBTI별 신년 가이드 요청]
 - 출력 형식: **딱 1문장, 35~45자 사이의 자연스러운 한 문장**
 - 반드시 포함: MBTI 유형 + 실행 유도 행동 제안
 - 문체: 마치 친한 AI가 속삭이듯, 부드럽지만 명확하게
@@ -663,8 +663,8 @@ ${data.mbti ? `[신년 가이드 안내 요청]
 - 시간 범위: 2026년 전체
 
 예시)
-- ENFP는 2026년 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
-- INTJ는 2026년 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
+- ENFP는 묘하게 끌리는 장소가 생긴다면 절대 망설이지 말고 그곳으로 발걸음을 옮겨야 해  
+- INTJ는 타인의 무심한 말에 잠시 흔들릴 수도 있어, 괜찮아, 지금은 혼자 생각할 시간이 필요해` : ''}
 
 사용자 정보:
 성별: ${data.gender || '입력되지 않음'}
@@ -676,7 +676,7 @@ ${data.mbti ? `MBTI: ${data.mbti}` : ''}
 
 [출력 형식]
 신년 운세 요약: 위에서 제시한 조건에 맞춰 신년 운세 요약을 생성해주세요.
-${data.mbti ? '신년 가이드 안내: 위에서 제시한 조건에 맞춰 신년 가이드 안내를 생성해주세요.' : ''}`;
+${data.mbti ? 'MBTI별 신년 가이드: 위에서 제시한 조건에 맞춰 MBTI별 신년 가이드를 생성해주세요.' : ''}`;
 }
 
 // 운세 프롬프트 생성 함수
@@ -762,7 +762,7 @@ function parseNewYearFortuneResult(text) {
     health: scores.health,
     total: totalScore,
     fortune: extractTextBlock(lines, '신년 운세 요약:') || '2026년은 좋은 일이 가득할 것입니다.',
-    guideTip: extractTextBlock(lines, '신년 가이드 안내:') || 'MBTI 특성을 살려 2026년을 보내세요.'
+    guideTip: extractTextBlock(lines, 'MBTI별 신년 가이드:') || 'MBTI 특성을 살려 2026년을 보내세요.'
   };
 }
 
@@ -1757,8 +1757,8 @@ app.get('/api/statistics', async (req, res) => {
         const conversionRate = Math.round((successCount / totalSelections) * 100);
         recentMonthConversionRates[service] = conversionRate;
       } else {
-        // 데이터가 없으면 0으로 설정 (또는 null)
-        recentMonthConversionRates[service] = 0;
+        // 카메라 ON인 데이터가 없으면 null로 설정 (데이터 없음 표시)
+        recentMonthConversionRates[service] = null;
       }
     });
     
